@@ -16,7 +16,6 @@ CORS(app)
 app.config['JWT_SECRET_KEY'] = 'your-secret-key-here'  # Change this in production!
 jwt = JWTManager(app)
 
-# SQLite setup
 def init_db():
     with sqlite3.connect('users.db') as conn:
         c = conn.cursor()
@@ -29,7 +28,6 @@ def init_db():
 
 init_db()
 
-# Model setup
 MODEL_PATH = 'model.pkl'
 if not os.path.exists(MODEL_PATH):
     print("Training new model...")
@@ -67,8 +65,10 @@ def register():
         with sqlite3.connect('users.db') as conn:
             c = conn.cursor()
             c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
+            user_id = c.lastrowid  # Get the new user's ID
             conn.commit()
-        return jsonify({'message': 'User registered successfully'}), 201
+        access_token = create_access_token(identity=user_id)  # Auto-login
+        return jsonify({'message': 'User registered successfully', 'token': access_token}), 201
     except sqlite3.IntegrityError:
         return jsonify({'message': 'Username already exists'}), 409
 
@@ -84,7 +84,7 @@ def login():
         user = c.fetchone()
     
     if user and pbkdf2_sha256.verify(password, user[1]):
-        access_token = create_access_token(identity=user[0])  # Use user ID as identity
+        access_token = create_access_token(identity=user[0])
         return jsonify({'token': access_token}), 200
     else:
         return jsonify({'message': 'Invalid credentials'}), 401
@@ -112,12 +112,11 @@ def predict():
         result = 'Diabetic'
         diet_suggestion = 'Adopt a low-sugar, low-carb diet and consult a doctor for monitoring.'
     
-    # Save prediction if user is logged in
     user_id = None
     try:
-        user_id = get_jwt_identity()  # Returns None if no valid token
+        user_id = get_jwt_identity()
     except:
-        pass  # No token, proceed without saving
+        pass
     
     if user_id:
         with sqlite3.connect('users.db') as conn:

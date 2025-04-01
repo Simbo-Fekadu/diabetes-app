@@ -2,15 +2,16 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { Eye, EyeOff, Loader2, Moon, Sun } from "lucide-react";
+import { Eye, EyeOff, Loader2, Moon, Sun, UserPlus } from "lucide-react";
 
-function Login({ setToken, darkMode: parentDarkMode, showSignup }) {
+function Signup({ setToken, darkMode: parentDarkMode, showLogin }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [messageType, setMessageType] = useState("error");
   const [darkMode, setDarkMode] = useState(parentDarkMode);
 
@@ -23,12 +24,6 @@ function Login({ setToken, darkMode: parentDarkMode, showSignup }) {
         "(prefers-color-scheme: dark)"
       ).matches;
       setDarkMode(prefersDark);
-    }
-
-    const savedUsername = localStorage.getItem("rememberedUsername");
-    if (savedUsername) {
-      setUsername(savedUsername);
-      setRememberMe(true);
     }
   }, []);
 
@@ -53,24 +48,25 @@ function Login({ setToken, darkMode: parentDarkMode, showSignup }) {
     setIsLoading(true);
     setMessage("");
 
+    if (password !== confirmPassword) {
+      setMessageType("error");
+      setMessage("Passwords do not match");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const response = await axios.post("http://127.0.0.1:5000/login", {
+      const response = await axios.post("http://127.0.0.1:5000/register", {
         username,
         password,
       });
       setToken(response.data.token);
       setMessageType("success");
-      setMessage("Login successful! Redirecting...");
-
-      if (rememberMe) {
-        localStorage.setItem("rememberedUsername", username);
-      } else {
-        localStorage.removeItem("rememberedUsername");
-      }
+      setMessage("Signup successful! Redirecting...");
     } catch (error) {
       setMessageType("error");
       setMessage(
-        "Login failed: " + (error.response?.data.message || "Server error")
+        "Signup failed: " + (error.response?.data.message || "Server error")
       );
     } finally {
       setIsLoading(false);
@@ -107,10 +103,10 @@ function Login({ setToken, darkMode: parentDarkMode, showSignup }) {
             darkMode ? "text-indigo-400" : "text-indigo-600"
           }`}
         >
-          Welcome Back
+          Create Account
         </h2>
         <p className={`mt-2 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-          Please sign in to your account
+          Sign up to start predicting
         </p>
       </div>
 
@@ -183,39 +179,46 @@ function Login({ setToken, darkMode: parentDarkMode, showSignup }) {
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
+        <div className="space-y-2">
+          <label
+            htmlFor="confirm-password"
+            className={`block text-sm font-medium ${
+              darkMode ? "text-gray-300" : "text-gray-700"
+            }`}
+          >
+            Confirm Password
+          </label>
+          <div className="relative">
             <input
-              id="remember-me"
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className={`h-4 w-4 rounded focus:ring-indigo-500 ${
+              id="confirm-password"
+              type={showConfirmPassword ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className={`w-full p-3 rounded-md transition-colors pr-10 focus:outline-none focus:ring-2 ${
                 darkMode
-                  ? "bg-gray-700 border-gray-600 text-indigo-500"
-                  : "border-gray-300 text-indigo-600"
+                  ? "bg-gray-700 border-gray-600 text-white focus:ring-indigo-500"
+                  : "bg-white border-gray-300 text-gray-900 focus:ring-indigo-500"
               }`}
+              placeholder="Confirm your password"
+              required
+              disabled={isLoading}
             />
-            <label
-              htmlFor="remember-me"
-              className={`ml-2 block text-sm ${
-                darkMode ? "text-gray-300" : "text-gray-700"
-              }`}
-            >
-              Remember me
-            </label>
-          </div>
-          <div className="text-sm">
-            <a
-              href="#"
-              className={`font-medium hover:underline ${
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
                 darkMode
-                  ? "text-indigo-400 hover:text-indigo-300"
-                  : "text-indigo-600 hover:text-indigo-500"
+                  ? "text-gray-400 hover:text-gray-300"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
+              tabIndex="-1"
             >
-              Forgot password?
-            </a>
+              {showConfirmPassword ? (
+                <EyeOff className="h-5 w-5" />
+              ) : (
+                <Eye className="h-5 w-5" />
+              )}
+            </button>
           </div>
         </div>
 
@@ -231,10 +234,13 @@ function Login({ setToken, darkMode: parentDarkMode, showSignup }) {
           {isLoading ? (
             <>
               <Loader2 className="animate-spin h-5 w-5 mr-2" />
-              Signing in...
+              Signing up...
             </>
           ) : (
-            "Sign in"
+            <>
+              <UserPlus className="h-5 w-5 mr-2" />
+              Sign up
+            </>
           )}
         </button>
       </form>
@@ -259,16 +265,16 @@ function Login({ setToken, darkMode: parentDarkMode, showSignup }) {
         <p
           className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}
         >
-          Don't have an account?{" "}
+          Already have an account?{" "}
           <button
-            onClick={showSignup}
+            onClick={showLogin}
             className={`font-medium hover:underline ${
               darkMode
                 ? "text-indigo-400 hover:text-indigo-300"
                 : "text-indigo-600 hover:text-indigo-500"
             }`}
           >
-            Sign up
+            Sign in
           </button>
         </p>
       </div>
@@ -276,4 +282,4 @@ function Login({ setToken, darkMode: parentDarkMode, showSignup }) {
   );
 }
 
-export default Login;
+export default Signup;

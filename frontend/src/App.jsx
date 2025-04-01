@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { Moon, Sun, LogIn, LogOut, Activity, History } from "lucide-react";
 import Login from "./Login";
+import Signup from "./Signup";
 
 function App() {
   const [token, setToken] = useState(null);
@@ -22,9 +23,9 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSignupModal, setShowSignupModal] = useState(false);
   const [activeTab, setActiveTab] = useState("predict");
 
-  // Initialize dark mode based on user preference
   useEffect(() => {
     const savedMode = localStorage.getItem("darkMode");
     if (savedMode !== null) {
@@ -37,7 +38,6 @@ function App() {
     }
   }, []);
 
-  // Update body class and localStorage when dark mode changes
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add("dark");
@@ -75,7 +75,7 @@ function App() {
         config
       );
       setResult(response.data);
-      if (token) fetchHistory(); // Refresh history if logged in
+      if (token) fetchHistory();
     } catch (error) {
       setResult({
         prediction: "Error",
@@ -116,7 +116,6 @@ function App() {
       }`}
     >
       <div className="container mx-auto max-w-4xl px-4 py-8">
-        {/* Header with dark mode toggle and login/logout */}
         <div className="flex justify-between items-center mb-8">
           <h1
             className={`text-3xl font-bold ${
@@ -171,7 +170,6 @@ function App() {
           </div>
         </div>
 
-        {/* Tabs for Predict and History (if logged in) */}
         <div className="flex mb-6 border-b border-gray-300 dark:border-gray-700">
           <button
             className={`px-4 py-2 font-medium flex items-center ${
@@ -207,7 +205,6 @@ function App() {
           )}
         </div>
 
-        {/* Prediction Form */}
         {activeTab === "predict" && (
           <div>
             <form
@@ -477,7 +474,6 @@ function App() {
           </div>
         )}
 
-        {/* History Tab */}
         {activeTab === "history" && token && (
           <div
             className={`p-6 rounded-xl shadow-md transition-colors ${
@@ -493,7 +489,6 @@ function App() {
             >
               Your Prediction History
             </h2>
-
             {history.length === 0 ? (
               <p
                 className={`text-center py-6 ${
@@ -565,7 +560,6 @@ function App() {
           </div>
         )}
 
-        {/* Login Modal */}
         {showLoginModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div
@@ -603,6 +597,57 @@ function App() {
                     setShowLoginModal(false);
                   }}
                   darkMode={darkMode}
+                  showSignup={() => {
+                    setShowLoginModal(false);
+                    setShowSignupModal(true);
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showSignupModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div
+              className={`relative w-full max-w-md rounded-lg shadow-xl transition-colors ${
+                darkMode ? "bg-gray-800" : "bg-white"
+              }`}
+            >
+              <button
+                onClick={() => setShowSignupModal(false)}
+                className={`absolute top-4 right-4 p-1 rounded-full ${
+                  darkMode
+                    ? "text-gray-400 hover:text-white hover:bg-gray-700"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+              <div className="p-6">
+                <Signup
+                  setToken={(token) => {
+                    setToken(token);
+                    setShowSignupModal(false);
+                  }}
+                  darkMode={darkMode}
+                  showLogin={() => {
+                    setShowSignupModal(false);
+                    setShowLoginModal(true);
+                  }}
                 />
               </div>
             </div>
