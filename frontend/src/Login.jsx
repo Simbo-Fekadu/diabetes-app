@@ -1,70 +1,292 @@
-import { useState } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import axios from "axios";
+import { Eye, EyeOff, Loader2, Moon, Sun } from "lucide-react";
 
 function Login({ setToken }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [messageType, setMessageType] = useState("error"); // "error" or "success"
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Initialize dark mode based on user preference or system preference
+  useEffect(() => {
+    // Check localStorage first
+    const savedMode = localStorage.getItem("darkMode");
+    if (savedMode !== null) {
+      setDarkMode(savedMode === "true");
+    } else {
+      // Check system preference
+      const prefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      ).matches;
+      setDarkMode(prefersDark);
+    }
+
+    // Load remembered username
+    const savedUsername = localStorage.getItem("rememberedUsername");
+    if (savedUsername) {
+      setUsername(savedUsername);
+      setRememberMe(true);
+    }
+  }, []);
+
+  // Update body class and localStorage when dark mode changes
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    localStorage.setItem("darkMode", darkMode.toString());
+  }, [darkMode]);
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setMessage("");
+
     try {
       const response = await axios.post("http://127.0.0.1:5000/login", {
         username,
         password,
+        remember: rememberMe,
       });
       setToken(response.data.token);
-      setMessage("Login successful!");
+      setMessageType("success");
+      setMessage("Login successful! Redirecting...");
+
+      // Store username in localStorage if "Remember me" is checked
+      if (rememberMe) {
+        localStorage.setItem("rememberedUsername", username);
+      } else {
+        localStorage.removeItem("rememberedUsername");
+      }
     } catch (error) {
+      setMessageType("error");
       setMessage(
         "Login failed: " + (error.response?.data.message || "Server error")
       );
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
-      <div className="bg-white p-6 rounded-lg shadow-md max-w-sm w-full">
-        <h2 className="text-2xl font-bold text-center text-indigo-600 mb-4">
-          Login
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
+    <div
+      className={`min-h-screen flex items-center justify-center p-6 transition-colors duration-200 ${
+        darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-900"
+      }`}
+    >
+      <div
+        className={`p-8 rounded-lg shadow-lg max-w-md w-full transition-colors duration-200 ${
+          darkMode ? "bg-gray-800 border border-gray-700" : "bg-white"
+        }`}
+      >
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={toggleDarkMode}
+            className={`p-2 rounded-full ${
+              darkMode
+                ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+            aria-label={
+              darkMode ? "Switch to light mode" : "Switch to dark mode"
+            }
+          >
+            {darkMode ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </button>
+        </div>
+
+        <div className="text-center mb-8">
+          <h2
+            className={`text-3xl font-bold ${
+              darkMode ? "text-indigo-400" : "text-indigo-600"
+            }`}
+          >
+            Welcome Back
+          </h2>
+          <p className={`mt-2 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
+            Please sign in to your account
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <label
+              htmlFor="username"
+              className={`block text-sm font-medium ${
+                darkMode ? "text-gray-300" : "text-gray-700"
+              }`}
+            >
               Username
             </label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="mt-1 w-full p-2 border border-gray-300 rounded-md"
-              placeholder="Enter username"
-              required
-            />
+            <div className="relative">
+              <input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className={`w-full p-3 rounded-md transition-colors focus:outline-none focus:ring-2 ${
+                  darkMode
+                    ? "bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-indigo-500"
+                    : "bg-white border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-indigo-500"
+                }`}
+                placeholder="Enter your username"
+                required
+                disabled={isLoading}
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
+
+          <div className="space-y-2">
+            <label
+              htmlFor="password"
+              className={`block text-sm font-medium ${
+                darkMode ? "text-gray-300" : "text-gray-700"
+              }`}
+            >
               Password
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full p-2 border border-gray-300 rounded-md"
-              placeholder="Enter password"
-              required
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={`w-full p-3 rounded-md transition-colors pr-10 focus:outline-none focus:ring-2 ${
+                  darkMode
+                    ? "bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-indigo-500"
+                    : "bg-white border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-indigo-500"
+                }`}
+                placeholder="Enter your password"
+                required
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
+                  darkMode
+                    ? "text-gray-400 hover:text-gray-300"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+                tabIndex="-1"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
           </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <input
+                id="remember-me"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className={`h-4 w-4 rounded focus:ring-indigo-500 ${
+                  darkMode
+                    ? "bg-gray-700 border-gray-600 text-indigo-500"
+                    : "border-gray-300 text-indigo-600"
+                }`}
+              />
+              <label
+                htmlFor="remember-me"
+                className={`ml-2 block text-sm ${
+                  darkMode ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
+                Remember me
+              </label>
+            </div>
+            <div className="text-sm">
+              <a
+                href="#"
+                className={`font-medium hover:underline ${
+                  darkMode
+                    ? "text-indigo-400 hover:text-indigo-300"
+                    : "text-indigo-600 hover:text-indigo-500"
+                }`}
+              >
+                Forgot password?
+              </a>
+            </div>
+          </div>
+
           <button
             type="submit"
-            className="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700"
+            disabled={isLoading}
+            className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
+              darkMode
+                ? "bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-500 disabled:bg-indigo-800 disabled:opacity-70"
+                : "bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-500 disabled:opacity-70"
+            }`}
           >
-            Login
+            {isLoading ? (
+              <>
+                <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                Signing in...
+              </>
+            ) : (
+              "Sign in"
+            )}
           </button>
         </form>
+
         {message && (
-          <p className="mt-2 text-center text-sm text-red-600">{message}</p>
+          <div
+            className={`mt-4 p-3 rounded-md ${
+              messageType === "success"
+                ? darkMode
+                  ? "bg-green-900 text-green-100 border border-green-800"
+                  : "bg-green-50 text-green-800 border border-green-200"
+                : darkMode
+                ? "bg-red-900 text-red-100 border border-red-800"
+                : "bg-red-50 text-red-800 border border-red-200"
+            }`}
+          >
+            <p className="text-center text-sm">{message}</p>
+          </div>
         )}
+
+        <div className="mt-6 text-center">
+          <p
+            className={`text-sm ${
+              darkMode ? "text-gray-400" : "text-gray-600"
+            }`}
+          >
+            Don't have an account?{" "}
+            <a
+              href="#"
+              className={`font-medium hover:underline ${
+                darkMode
+                  ? "text-indigo-400 hover:text-indigo-300"
+                  : "text-indigo-600 hover:text-indigo-500"
+              }`}
+            >
+              Sign up
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );

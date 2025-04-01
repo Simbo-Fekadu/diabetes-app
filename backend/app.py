@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from passlib.hash import pbkdf2_sha256
 import sqlite3
 import numpy as np
@@ -22,6 +22,9 @@ def init_db():
         c = conn.cursor()
         c.execute('''CREATE TABLE IF NOT EXISTS users 
                      (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password TEXT)''')
+        c.execute('''CREATE TABLE IF NOT EXISTS predictions 
+                     (id INTEGER PRIMARY KEY, user_id INTEGER, prediction TEXT, diet_suggestion TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                      FOREIGN KEY(user_id) REFERENCES users(id))''')
         conn.commit()
 
 init_db()
@@ -77,17 +80,16 @@ def login():
     
     with sqlite3.connect('users.db') as conn:
         c = conn.cursor()
-        c.execute("SELECT password FROM users WHERE username = ?", (username,))
+        c.execute("SELECT id, password FROM users WHERE username = ?", (username,))
         user = c.fetchone()
     
-    if user and pbkdf2_sha256.verify(password, user[0]):
-        access_token = create_access_token(identity=username)
+    if user and pbkdf2_sha256.verify(password, user[1]):
+        access_token = create_access_token(identity=user[0])  # Use user ID as identity
         return jsonify({'token': access_token}), 200
     else:
         return jsonify({'message': 'Invalid credentials'}), 401
 
 @app.route('/predict', methods=['POST'])
-@jwt_required()
 def predict():
     data = request.form
     input_data = [
@@ -110,7 +112,31 @@ def predict():
         result = 'Diabetic'
         diet_suggestion = 'Adopt a low-sugar, low-carb diet and consult a doctor for monitoring.'
     
+    # Save prediction if user is logged in
+    user_id = None
+    try:
+        user_id = get_jwt_identity()  # Returns None if no valid token
+    except:
+        pass  # No token, proceed without saving
+    
+    if user_id:
+        with sqlite3.connect('users.db') as conn:
+            c = conn.cursor()
+            c.execute("INSERT INTO predictions (user_id, prediction, diet_suggestion) VALUES (?, ?, ?)",
+                      (user_id, result, diet_suggestion))
+            conn.commit()
+    
     return jsonify({'prediction': result, 'diet_suggestion': diet_suggestion})
+
+@app.route('/history', methods=['GET'])
+@jwt_required()
+def get_history():
+    user_id = get_jwt_identity()
+    with sqlite3.connect('users.db') as conn:
+        c = conn.cursor()
+        c.execute("SELECT prediction, diet_suggestion, timestamp FROM predictions WHERE user_id = ? ORDER BY timestamp DESC", (user_id,))
+        history = [{'prediction': row[0], 'diet_suggestion': row[1], 'timestamp': row[2]} for row in c.fetchall()]
+    return jsonify({'history': history}), 200
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
