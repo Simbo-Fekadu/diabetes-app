@@ -1,6 +1,9 @@
 import { useState } from "react";
+import axios from "axios";
+import Login from "./Login";
 
 function App() {
+  const [token, setToken] = useState(null);
   const [formData, setFormData] = useState({
     Pregnancies: "",
     Glucose: "",
@@ -22,28 +25,31 @@ function App() {
     e.preventDefault();
     setLoading(true);
     try {
-      console.log("Sending request with data:", formData);
-      const response = await fetch("http://127.0.0.1:5000/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams(formData).toString(),
-      });
-      console.log("Response status:", response.status);
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log("Response data:", data);
-      setResult(data);
+      const response = await axios.post(
+        "http://127.0.0.1:5000/predict",
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setResult(response.data);
     } catch (error) {
-      console.error("Fetch error:", error);
       setResult({
         prediction: "Error",
-        diet_suggestion: "Failed to connect to server.",
+        diet_suggestion:
+          "Prediction failed: " +
+          (error.response?.data.message || "Server error"),
       });
     }
     setLoading(false);
   };
+
+  if (!token) {
+    return <Login setToken={setToken} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-indigo-100 to-purple-100 flex items-center justify-center p-6">
@@ -83,7 +89,7 @@ function App() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label class="block text-sm font-medium text-gray-700">
               Blood Pressure
             </label>
             <input
