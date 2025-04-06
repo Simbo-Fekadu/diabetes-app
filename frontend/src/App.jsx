@@ -5,9 +5,12 @@ import axios from "axios";
 import { Moon, Sun, LogIn, LogOut, Activity, History } from "lucide-react";
 import Login from "./Login";
 import Signup from "./Signup";
+import PredictionForm from "./PredictionForm";
+import PredictionResult from "./PredictionResult";
+import HistoryList from "./HistoryList";
 
 function App() {
-  const [token, setToken] = useState(null);
+  const [token, setToken] = useState(null); // Initialize token as null
   const [formData, setFormData] = useState({
     Pregnancies: "",
     Glucose: "",
@@ -17,9 +20,11 @@ function App() {
     BMI: "",
     DiabetesPedigreeFunction: "",
     Age: "",
+    Sex: "",
   });
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState([]);
+  const [historyError, setHistoryError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -47,6 +52,49 @@ function App() {
     localStorage.setItem("darkMode", darkMode.toString());
   }, [darkMode]);
 
+  // Validate token on page load
+  useEffect(() => {
+    const validateToken = async () => {
+      const storedToken = localStorage.getItem("token");
+      console.log("Retrieved token from localStorage:", storedToken); // Debug log
+      if (storedToken && storedToken.split(".").length === 3) {
+        try {
+          // Make a request to a protected endpoint to validate the token
+          await axios.get("http://127.0.0.1:5000/history", {
+            headers: { Authorization: `Bearer ${storedToken}` },
+          });
+          console.log("Token is valid, setting token state");
+          setToken(storedToken);
+        } catch (error) {
+          console.log(
+            "Token validation failed:",
+            error.response?.data || error.message
+          );
+          console.log("Clearing invalid/expired token");
+          localStorage.removeItem("token");
+          setToken(null);
+        }
+      } else {
+        console.log("No valid token found, clearing token");
+        localStorage.removeItem("token");
+        setToken(null);
+      }
+    };
+
+    validateToken();
+  }, []);
+
+  useEffect(() => {
+    if (token) {
+      localStorage.setItem("token", token);
+      fetchHistory();
+    } else {
+      localStorage.removeItem("token");
+      setHistory([]);
+      setHistoryError(null);
+    }
+  }, [token]);
+
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
   };
@@ -58,7 +106,18 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    console.log("Token during predict:", token); // Debug log
+    if (!token) {
+      console.log(
+        "No token available, prediction will not be saved to history"
+      );
+    }
     try {
+      const submissionData = new URLSearchParams({
+        ...formData,
+        Pregnancies: formData.Sex === "Male" ? "0" : formData.Pregnancies,
+      });
+      console.log("Form data being sent:", Object.fromEntries(submissionData)); // Debug log
       const config = token
         ? {
             headers: {
@@ -69,14 +128,21 @@ function App() {
         : {
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
           };
+      console.log("Sending predict request with config:", config); // Debug log
       const response = await axios.post(
         "http://127.0.0.1:5000/predict",
-        formData,
+        submissionData,
         config
       );
       setResult(response.data);
-      if (token) fetchHistory();
+      if (token) {
+        console.log("Fetching history after prediction"); // Debug log
+        await fetchHistory();
+      } else {
+        console.log("No token, skipping history fetch");
+      }
     } catch (error) {
+      console.error("Prediction error:", error.response?.data || error.message);
       setResult({
         prediction: "Error",
         diet_suggestion:
@@ -88,23 +154,37 @@ function App() {
   };
 
   const fetchHistory = async () => {
+    if (!token) {
+      console.log("No token, skipping history fetch");
+      setHistory([]);
+      setHistoryError(null);
+      return;
+    }
     try {
+      console.log("Fetching history with token:", token); // Debug log
       const response = await axios.get("http://127.0.0.1:5000/history", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setHistory(response.data.history);
+      console.log("History response:", response.data); // Debug log
+      setHistory(response.data.history || []);
+      setHistoryError(null);
     } catch (error) {
-      console.error("History fetch failed:", error);
+      console.error(
+        "History fetch failed:",
+        error.response?.data || error.message
+      );
+      setHistory([]);
+      setHistoryError(
+        "Failed to fetch history: " +
+          (error.response?.data.message || "Server error")
+      );
     }
   };
-
-  useEffect(() => {
-    if (token) fetchHistory();
-  }, [token]);
 
   const logout = () => {
     setToken(null);
     setHistory([]);
+    setHistoryError(null);
   };
 
   return (
@@ -197,7 +277,10 @@ function App() {
                   ? "text-gray-400 hover:text-gray-300"
                   : "text-gray-600 hover:text-gray-800"
               }`}
-              onClick={() => setActiveTab("history")}
+              onClick={() => {
+                setActiveTab("history");
+                fetchHistory();
+              }}
             >
               <History className="h-4 w-4 mr-2" />
               History
@@ -207,357 +290,23 @@ function App() {
 
         {activeTab === "predict" && (
           <div>
-            <form
-              onSubmit={handleSubmit}
-              className={`rounded-2xl shadow-xl p-8 space-y-4 transition-colors ${
-                darkMode ? "bg-gray-800" : "bg-white"
-              }`}
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label
-                    className={`block text-sm font-medium ${
-                      darkMode ? "text-gray-300" : "text-gray-700"
-                    }`}
-                  >
-                    Pregnancies
-                  </label>
-                  <input
-                    type="number"
-                    name="Pregnancies"
-                    value={formData.Pregnancies}
-                    onChange={handleChange}
-                    className={`mt-1 w-full p-2 border rounded-md focus:ring-2 focus:outline-none transition-colors ${
-                      darkMode
-                        ? "bg-gray-700 border-gray-600 text-white focus:ring-indigo-500"
-                        : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-                    }`}
-                    placeholder="Enter Pregnancies"
-                    min="0"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    className={`block text-sm font-medium ${
-                      darkMode ? "text-gray-300" : "text-gray-700"
-                    }`}
-                  >
-                    Glucose
-                  </label>
-                  <input
-                    type="number"
-                    name="Glucose"
-                    value={formData.Glucose}
-                    onChange={handleChange}
-                    className={`mt-1 w-full p-2 border rounded-md focus:ring-2 focus:outline-none transition-colors ${
-                      darkMode
-                        ? "bg-gray-700 border-gray-600 text-white focus:ring-indigo-500"
-                        : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-                    }`}
-                    placeholder="Enter Glucose"
-                    min="0"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    className={`block text-sm font-medium ${
-                      darkMode ? "text-gray-300" : "text-gray-700"
-                    }`}
-                  >
-                    Blood Pressure
-                  </label>
-                  <input
-                    type="number"
-                    name="BloodPressure"
-                    value={formData.BloodPressure}
-                    onChange={handleChange}
-                    className={`mt-1 w-full p-2 border rounded-md focus:ring-2 focus:outline-none transition-colors ${
-                      darkMode
-                        ? "bg-gray-700 border-gray-600 text-white focus:ring-indigo-500"
-                        : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-                    }`}
-                    placeholder="Enter Blood Pressure"
-                    min="0"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    className={`block text-sm font-medium ${
-                      darkMode ? "text-gray-300" : "text-gray-700"
-                    }`}
-                  >
-                    Skin Thickness
-                  </label>
-                  <input
-                    type="number"
-                    name="SkinThickness"
-                    value={formData.SkinThickness}
-                    onChange={handleChange}
-                    className={`mt-1 w-full p-2 border rounded-md focus:ring-2 focus:outline-none transition-colors ${
-                      darkMode
-                        ? "bg-gray-700 border-gray-600 text-white focus:ring-indigo-500"
-                        : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-                    }`}
-                    placeholder="Enter Skin Thickness"
-                    min="0"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    className={`block text-sm font-medium ${
-                      darkMode ? "text-gray-300" : "text-gray-700"
-                    }`}
-                  >
-                    Insulin
-                  </label>
-                  <input
-                    type="number"
-                    name="Insulin"
-                    value={formData.Insulin}
-                    onChange={handleChange}
-                    className={`mt-1 w-full p-2 border rounded-md focus:ring-2 focus:outline-none transition-colors ${
-                      darkMode
-                        ? "bg-gray-700 border-gray-600 text-white focus:ring-indigo-500"
-                        : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-                    }`}
-                    placeholder="Enter Insulin"
-                    min="0"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    className={`block text-sm font-medium ${
-                      darkMode ? "text-gray-300" : "text-gray-700"
-                    }`}
-                  >
-                    BMI
-                  </label>
-                  <input
-                    type="number"
-                    name="BMI"
-                    value={formData.BMI}
-                    onChange={handleChange}
-                    className={`mt-1 w-full p-2 border rounded-md focus:ring-2 focus:outline-none transition-colors ${
-                      darkMode
-                        ? "bg-gray-700 border-gray-600 text-white focus:ring-indigo-500"
-                        : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-                    }`}
-                    placeholder="Enter BMI"
-                    step="0.1"
-                    min="0"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    className={`block text-sm font-medium ${
-                      darkMode ? "text-gray-300" : "text-gray-700"
-                    }`}
-                  >
-                    Diabetes Pedigree Function
-                  </label>
-                  <input
-                    type="number"
-                    name="DiabetesPedigreeFunction"
-                    value={formData.DiabetesPedigreeFunction}
-                    onChange={handleChange}
-                    className={`mt-1 w-full p-2 border rounded-md focus:ring-2 focus:outline-none transition-colors ${
-                      darkMode
-                        ? "bg-gray-700 border-gray-600 text-white focus:ring-indigo-500"
-                        : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-                    }`}
-                    placeholder="Enter Diabetes Pedigree Function"
-                    step="0.1"
-                    min="0"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    className={`block text-sm font-medium ${
-                      darkMode ? "text-gray-300" : "text-gray-700"
-                    }`}
-                  >
-                    Age
-                  </label>
-                  <input
-                    type="number"
-                    name="Age"
-                    value={formData.Age}
-                    onChange={handleChange}
-                    className={`mt-1 w-full p-2 border rounded-md focus:ring-2 focus:outline-none transition-colors ${
-                      darkMode
-                        ? "bg-gray-700 border-gray-600 text-white focus:ring-indigo-500"
-                        : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-                    }`}
-                    placeholder="Enter Age"
-                    min="0"
-                    required
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className={`w-full py-3 rounded-md transition-colors font-medium ${
-                  darkMode
-                    ? "bg-indigo-700 hover:bg-indigo-600 text-white disabled:bg-indigo-900 disabled:text-gray-300"
-                    : "bg-indigo-600 hover:bg-indigo-700 text-white disabled:bg-indigo-400"
-                }`}
-              >
-                {loading ? "Predicting..." : "Predict Now"}
-              </button>
-            </form>
-
-            {result && (
-              <div
-                className={`mt-6 p-6 rounded-xl shadow-md transition-colors ${
-                  darkMode
-                    ? "bg-gray-800 border border-gray-700"
-                    : "bg-white border border-gray-200"
-                }`}
-              >
-                <h2
-                  className={`text-xl font-semibold ${
-                    darkMode ? "text-gray-100" : "text-gray-800"
-                  }`}
-                >
-                  Your Result
-                </h2>
-                <div className="mt-4 space-y-3">
-                  <div className="flex items-center">
-                    <span
-                      className={`font-medium ${
-                        darkMode ? "text-indigo-400" : "text-indigo-600"
-                      }`}
-                    >
-                      Diagnosis:
-                    </span>
-                    <span
-                      className={`ml-2 px-3 py-1 rounded-full text-sm font-medium ${
-                        result.prediction === "Diabetic"
-                          ? darkMode
-                            ? "bg-red-900 text-red-100"
-                            : "bg-red-100 text-red-800"
-                          : darkMode
-                          ? "bg-green-900 text-green-100"
-                          : "bg-green-100 text-green-800"
-                      }`}
-                    >
-                      {result.prediction}
-                    </span>
-                  </div>
-                  <div>
-                    <span
-                      className={`font-medium ${
-                        darkMode ? "text-indigo-400" : "text-indigo-600"
-                      }`}
-                    >
-                      Diet Tip:
-                    </span>
-                    <p
-                      className={`mt-1 ${
-                        darkMode ? "text-gray-300" : "text-gray-700"
-                      }`}
-                    >
-                      {result.diet_suggestion}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+            <PredictionForm
+              formData={formData}
+              handleChange={handleChange}
+              handleSubmit={handleSubmit}
+              loading={loading}
+              darkMode={darkMode}
+            />
+            <PredictionResult result={result} darkMode={darkMode} />
           </div>
         )}
 
         {activeTab === "history" && token && (
-          <div
-            className={`p-6 rounded-xl shadow-md transition-colors ${
-              darkMode
-                ? "bg-gray-800 border border-gray-700"
-                : "bg-white border border-gray-200"
-            }`}
-          >
-            <h2
-              className={`text-xl font-semibold mb-4 ${
-                darkMode ? "text-gray-100" : "text-gray-800"
-              }`}
-            >
-              Your Prediction History
-            </h2>
-            {history.length === 0 ? (
-              <p
-                className={`text-center py-6 ${
-                  darkMode ? "text-gray-400" : "text-gray-500"
-                }`}
-              >
-                No prediction history yet.
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {history.map((entry, index) => (
-                  <div
-                    key={index}
-                    className={`p-4 rounded-lg ${
-                      darkMode
-                        ? "bg-gray-700 border border-gray-600"
-                        : "bg-gray-50 border border-gray-200"
-                    }`}
-                  >
-                    <div className="flex items-center mb-2">
-                      <span
-                        className={`font-medium ${
-                          darkMode ? "text-gray-200" : "text-gray-700"
-                        }`}
-                      >
-                        Diagnosis:
-                      </span>
-                      <span
-                        className={`ml-2 px-3 py-1 rounded-full text-sm font-medium ${
-                          entry.prediction === "Diabetic"
-                            ? darkMode
-                              ? "bg-red-900 text-red-100"
-                              : "bg-red-100 text-red-800"
-                            : darkMode
-                            ? "bg-green-900 text-green-100"
-                            : "bg-green-100 text-green-800"
-                        }`}
-                      >
-                        {entry.prediction}
-                      </span>
-                    </div>
-                    <div className="mb-2">
-                      <span
-                        className={`font-medium ${
-                          darkMode ? "text-gray-200" : "text-gray-700"
-                        }`}
-                      >
-                        Diet Tip:
-                      </span>
-                      <p
-                        className={`mt-1 ${
-                          darkMode ? "text-gray-300" : "text-gray-600"
-                        }`}
-                      >
-                        {entry.diet_suggestion}
-                      </p>
-                    </div>
-                    <p
-                      className={`text-sm ${
-                        darkMode ? "text-gray-400" : "text-gray-500"
-                      }`}
-                    >
-                      {new Date(entry.timestamp).toLocaleString()}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <HistoryList
+            history={history}
+            historyError={historyError}
+            darkMode={darkMode}
+          />
         )}
 
         {showLoginModal && (

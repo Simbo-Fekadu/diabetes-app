@@ -60,7 +60,9 @@ function Signup({ setToken, darkMode: parentDarkMode, showLogin }) {
         username,
         password,
       });
-      setToken(response.data.token);
+      const token = response.data.token;
+      console.log("Signup successful, received token:", token); // Debug log
+      setToken(token);
       setMessageType("success");
       setMessage("Signup successful! Redirecting...");
     } catch (error) {

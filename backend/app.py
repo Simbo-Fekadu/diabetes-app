@@ -19,10 +19,14 @@ jwt = JWTManager(app)
 def init_db():
     with sqlite3.connect('users.db') as conn:
         c = conn.cursor()
+        # Create users table
         c.execute('''CREATE TABLE IF NOT EXISTS users 
                      (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password TEXT)''')
+        # Create predictions table with sex field
         c.execute('''CREATE TABLE IF NOT EXISTS predictions 
-                     (id INTEGER PRIMARY KEY, user_id INTEGER, prediction TEXT, diet_suggestion TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                     (id INTEGER PRIMARY KEY, user_id INTEGER, prediction TEXT, 
+                      glucose REAL, blood_pressure REAL, risk_percentage REAL, 
+                      diet_suggestion TEXT, sex TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                       FOREIGN KEY(user_id) REFERENCES users(id))''')
         conn.commit()
 
@@ -65,9 +69,10 @@ def register():
         with sqlite3.connect('users.db') as conn:
             c = conn.cursor()
             c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
-            user_id = c.lastrowid  # Get the new user's ID
+            user_id = c.lastrowid
             conn.commit()
-        access_token = create_access_token(identity=user_id)  # Auto-login
+        # Convert user_id to string for JWT identity
+        access_token = create_access_token(identity=str(user_id))
         return jsonify({'message': 'User registered successfully', 'token': access_token}), 201
     except sqlite3.IntegrityError:
         return jsonify({'message': 'Username already exists'}), 409
@@ -84,57 +89,117 @@ def login():
         user = c.fetchone()
     
     if user and pbkdf2_sha256.verify(password, user[1]):
-        access_token = create_access_token(identity=user[0])
+        # Convert user_id to string for JWT identity
+        access_token = create_access_token(identity=str(user[0]))
         return jsonify({'token': access_token}), 200
     else:
         return jsonify({'message': 'Invalid credentials'}), 401
 
 @app.route('/predict', methods=['POST'])
+@jwt_required(optional=True)  # Token is optional for prediction, required for saving to history
 def predict():
-    data = request.form
-    input_data = [
-        float(data['Pregnancies']),
-        float(data['Glucose']),
-        float(data['BloodPressure']),
-        float(data['SkinThickness']),
-        float(data['Insulin']),
-        float(data['BMI']),
-        float(data['DiabetesPedigreeFunction']),
-        float(data['Age'])
-    ]
-    input_array = np.asarray(input_data).reshape(1, -1)
-    prediction = model.predict(input_array)[0]
-    
-    if prediction == 0:
-        result = 'Not Diabetic'
-        diet_suggestion = 'Maintain a balanced diet with whole grains, vegetables, and regular exercise.'
-    else:
-        result = 'Diabetic'
-        diet_suggestion = 'Adopt a low-sugar, low-carb diet and consult a doctor for monitoring.'
-    
-    user_id = None
     try:
-        user_id = get_jwt_identity()
-    except:
-        pass
-    
-    if user_id:
-        with sqlite3.connect('users.db') as conn:
-            c = conn.cursor()
-            c.execute("INSERT INTO predictions (user_id, prediction, diet_suggestion) VALUES (?, ?, ?)",
-                      (user_id, result, diet_suggestion))
-            conn.commit()
-    
-    return jsonify({'prediction': result, 'diet_suggestion': diet_suggestion})
+        # Validate form data
+        required_fields = [
+            'Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness',
+            'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age', 'Sex'
+        ]
+        data = request.form
+        print(f"Received form data: {dict(data)}")  # Debug log
+        for field in required_fields:
+            if field not in data or not data[field]:
+                return jsonify({'message': f'Missing or empty field: {field}'}), 400
+
+        # Convert form data to floats
+        try:
+            input_data = [
+                float(data['Pregnancies']),
+                float(data['Glucose']),
+                float(data['BloodPressure']),
+                float(data['SkinThickness']),
+                float(data['Insulin']),
+                float(data['BMI']),
+                float(data['DiabetesPedigreeFunction']),
+                float(data['Age'])
+            ]
+        except ValueError as e:
+            return jsonify({'message': f'Invalid numeric value: {str(e)}'}), 400
+
+        # Make prediction
+        input_array = np.asarray(input_data).reshape(1, -1)
+        prediction = model.predict(input_array)[0]
+        
+        # Calculate risk percentage
+        glucose = float(data['Glucose'])
+        bmi = float(data['BMI'])
+        blood_pressure = float(data['BloodPressure'])
+        sex = data['Sex']
+        risk_percentage = min(100, (glucose / 2) + (bmi * 1.5))  # Adjust this formula as needed
+        
+        if prediction == 0:
+            result = 'Not Diabetic'
+            diet_suggestion = 'Continue with a balanced diet rich in vegetables and whole grains.'
+        else:
+            result = 'Diabetic'
+            diet_suggestion = 'Adopt a low-sugar, low-carb diet and consult a doctor for monitoring.'
+        
+        # Attempt to save to history if user is authenticated
+        user_id = None
+        token = request.headers.get('Authorization', '').replace('Bearer ', '')
+        print(f"Received token: {token}")  # Debug log
+        try:
+            user_id = get_jwt_identity()
+            print(f"User ID: {user_id}")  # Debug log
+        except Exception as e:
+            print(f"Error getting user_id: {e}")  # Debug log
+        
+        if user_id:
+            try:
+                with sqlite3.connect('users.db') as conn:
+                    c = conn.cursor()
+                    c.execute(
+                        "INSERT INTO predictions (user_id, prediction, glucose, blood_pressure, risk_percentage, diet_suggestion, sex) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (int(user_id), result, glucose, blood_pressure, risk_percentage, diet_suggestion, sex)  # Convert user_id back to int for database
+                    )
+                    conn.commit()
+                    print(f"Prediction saved for user_id: {user_id}")  # Debug log
+            except Exception as e:
+                print(f"Error saving prediction to database: {e}")  # Debug log
+                # Don't fail the prediction if database save fails
+        
+        return jsonify({
+            'prediction': result,
+            'glucose': glucose,
+            'blood_pressure': blood_pressure,
+            'risk_percentage': risk_percentage,
+            'diet_suggestion': diet_suggestion
+        })
+    except Exception as e:
+        print(f"Error in predict endpoint: {e}")  # Debug log
+        return jsonify({'message': f'Prediction failed: {str(e)}'}), 500
 
 @app.route('/history', methods=['GET'])
 @jwt_required()
 def get_history():
     user_id = get_jwt_identity()
+    print(f"Fetching history for user_id: {user_id}")  # Debug log
     with sqlite3.connect('users.db') as conn:
         c = conn.cursor()
-        c.execute("SELECT prediction, diet_suggestion, timestamp FROM predictions WHERE user_id = ? ORDER BY timestamp DESC", (user_id,))
-        history = [{'prediction': row[0], 'diet_suggestion': row[1], 'timestamp': row[2]} for row in c.fetchall()]
+        c.execute(
+            "SELECT prediction, glucose, blood_pressure, risk_percentage, timestamp, sex FROM predictions WHERE user_id = ? ORDER BY timestamp DESC",
+            (int(user_id),)  # Convert user_id back to int for database query
+        )
+        history = [
+            {
+                'prediction': row[0],
+                'glucose': row[1],
+                'blood_pressure': row[2],
+                'risk_percentage': row[3],
+                'timestamp': row[4],
+                'sex': row[5]
+            } for row in c.fetchall()
+        ]
+        print(f"History fetched: {history}")  # Debug log
     return jsonify({'history': history}), 200
 
 if __name__ == "__main__":

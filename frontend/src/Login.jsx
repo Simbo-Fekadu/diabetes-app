@@ -58,7 +58,9 @@ function Login({ setToken, darkMode: parentDarkMode, showSignup }) {
         username,
         password,
       });
-      setToken(response.data.token);
+      const token = response.data.token;
+      console.log("Login successful, received token:", token); // Debug log
+      setToken(token);
       setMessageType("success");
       setMessage("Login successful! Redirecting...");
 
