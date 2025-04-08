@@ -47,8 +47,15 @@ if not os.path.exists(MODEL_PATH):
     with open(MODEL_PATH, 'wb') as f:
         pickle.dump(model, f)
 else:
+    # Load the model and calculate accuracy using the same test split
+    data = pd.read_csv('diabetes.csv')
+    X = data.drop('Outcome', axis=1)
+    y = data['Outcome']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     model = pickle.load(open(MODEL_PATH, 'rb'))
-    print("Model loaded from", MODEL_PATH)
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"Model loaded from {MODEL_PATH}. Test accuracy: {accuracy:.2f}")
 
 @app.route('/')
 def home():
