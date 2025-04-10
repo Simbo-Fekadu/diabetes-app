@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { Moon, Sun, LogIn, LogOut, Activity, History } from "lucide-react";
+import { Moon, Sun, LogIn, LogOut, Activity, History, Carrot } from "lucide-react";
 import Login from "./Login";
 import Signup from "./Signup";
 import PredictionForm from "./PredictionForm";
-import PredictionResult from "./PredictionResult";
+// import PredictionResult from "./PredictionResult";
 import HistoryList from "./HistoryList";
+import RecommendationPage from "./RecommendationPage";
 import LandingPage from "./LandingPage";
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
     DiabetesPedigreeFunction: "",
     Age: "",
     Sex: "",
+    Activity: "",
     result: null,
   });
   const [history, setHistory] = useState([]);
@@ -39,9 +41,7 @@ function App() {
     if (savedMode !== null) {
       setDarkMode(savedMode === "true");
     } else {
-      const prefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches;
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       setDarkMode(prefersDark);
     }
   }, []);
@@ -71,10 +71,7 @@ function App() {
           setToken(storedToken);
           setShowLandingPage(false); // Redirect to main page if token is valid
         } catch (error) {
-          console.log(
-            "Token validation failed:",
-            error.response?.data || error.message
-          );
+          console.log("Token validation failed:", error.response?.data || error.message);
           console.log("Clearing invalid/expired token");
           localStorage.removeItem("token");
           setToken(null);
@@ -114,9 +111,7 @@ function App() {
     setLoading(true);
     console.log("Token during predict:", token);
     if (!token) {
-      console.log(
-        "No token available, prediction will not be saved to history"
-      );
+      console.log("No token available, prediction will not be saved to history");
     }
     try {
       const heightInCm = parseFloat(formData.Height);
@@ -131,9 +126,7 @@ function App() {
       }
 
       const bmi = weight / (heightInMeters * heightInMeters);
-
-      const pregnancies =
-        formData.Sex === "Male" ? "0" : formData.Pregnancies || "0";
+      const pregnancies = formData.Sex === "Male" ? "0" : formData.Pregnancies || "0";
 
       const submissionData = new URLSearchParams({
         ...formData,
@@ -157,6 +150,7 @@ function App() {
         submissionData,
         config
       );
+      console.log("Prediction response:", response.data);
       setFormData({ ...formData, result: response.data });
       if (token) {
         console.log("Fetching history after prediction");
@@ -170,9 +164,7 @@ function App() {
         ...formData,
         result: {
           prediction: "Error",
-          diet_suggestion:
-            "Prediction failed: " +
-            (error.response?.data?.message || error.message || "Server error"),
+          diet_suggestion: "Prediction failed: " + (error.response?.data?.message || error.message || "Server error"),
         },
       });
     }
@@ -195,23 +187,20 @@ function App() {
       setHistory(response.data.history || []);
       setHistoryError(null);
     } catch (error) {
-      console.error(
-        "History fetch failed:",
-        error.response?.data || error.message
-      );
+      console.error("History fetch failed:", error.response?.data || error.message);
       setHistory([]);
-      setHistoryError(
-        "Failed to fetch history: " +
-          (error.response?.data.message || "Server error")
-      );
+      setHistoryError("Failed to fetch history: " + (error.response?.data.message || "Server error"));
     }
   };
 
   const logout = () => {
+    console.log("Logging out");
     setToken(null);
     setHistory([]);
     setHistoryError(null);
+    setFormData({ ...formData, result: null });
     setShowLandingPage(true);
+    setActiveTab("predict");
   };
 
   const handleTryIt = () => {
@@ -230,9 +219,7 @@ function App() {
   return (
     <div
       className={`min-h-screen transition-colors duration-300 ${
-        darkMode
-          ? "bg-gray-900 text-gray-100"
-          : "bg-gradient-to-r from-indigo-100 to-purple-100 text-gray-900"
+        darkMode ? "bg-gray-900 text-gray-100" : "bg-gradient-to-r from-indigo-100 to-purple-100 text-gray-900"
       }`}
     >
       {showLandingPage ? (
@@ -259,9 +246,7 @@ function App() {
                 <button
                   onClick={logout}
                   className={`flex items-center px-4 py-2 rounded-full transition-colors ${
-                    darkMode
-                      ? "bg-red-800 hover:bg-red-700 text-white"
-                      : "bg-red-600 hover:bg-red-700 text-white"
+                    darkMode ? "bg-red-800 hover:bg-red-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"
                   }`}
                 >
                   <LogOut className="h-4 w-4 mr-2" />
@@ -271,9 +256,7 @@ function App() {
                 <button
                   onClick={() => setShowLoginModal(true)}
                   className={`flex items-center px-4 py-2 rounded-full transition-colors ${
-                    darkMode
-                      ? "bg-indigo-700 hover:bg-indigo-600 text-white"
-                      : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    darkMode ? "bg-indigo-700 hover:bg-indigo-600 text-white" : "bg-indigo-600 hover:bg-indigo-700 text-white"
                   }`}
                 >
                   <LogIn className="h-4 w-4 mr-2" />
@@ -283,19 +266,11 @@ function App() {
               <button
                 onClick={toggleDarkMode}
                 className={`p-2 rounded-full transition-colors ${
-                  darkMode
-                    ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
-                    : "bg-white text-gray-700 hover:bg-gray-200"
+                  darkMode ? "bg-gray-700 text-yellow-300 hover:bg-gray-600" : "bg-white text-gray-700 hover:bg-gray-200"
                 }`}
-                aria-label={
-                  darkMode ? "Switch to light mode" : "Switch to dark mode"
-                }
+                aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
               >
-                {darkMode ? (
-                  <Sun className="h-5 w-5" />
-                ) : (
-                  <Moon className="h-5 w-5" />
-                )}
+                {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
             </div>
           </div>
@@ -317,24 +292,41 @@ function App() {
               Predict
             </button>
             {token && (
-              <button
-                className={`px-4 py-2 font-medium flex items-center ${
-                  activeTab === "history"
-                    ? darkMode
-                      ? "border-b-2 border-indigo-400 text-indigo-400"
-                      : "border-b-2 border-indigo-600 text-indigo-600"
-                    : darkMode
-                    ? "text-gray-400 hover:text-gray-300"
-                    : "text-gray-600 hover:text-gray-800"
-                }`}
-                onClick={() => {
-                  setActiveTab("history");
-                  fetchHistory();
-                }}
-              >
-                <History className="h-4 w-4 mr-2" />
-                History
-              </button>
+              <>
+                <button
+                  className={`px-4 py-2 font-medium flex items-center ${
+                    activeTab === "history"
+                      ? darkMode
+                        ? "border-b-2 border-indigo-400 text-indigo-400"
+                        : "border-b-2 border-indigo-600 text-indigo-600"
+                      : darkMode
+                      ? "text-gray-400 hover:text-gray-300"
+                      : "text-gray-600 hover:text-gray-800"
+                  }`}
+                  onClick={() => {
+                    setActiveTab("history");
+                    fetchHistory();
+                  }}
+                >
+                  <History className="h-4 w-4 mr-2" />
+                  History
+                </button>
+                <button
+                  className={`px-4 py-2 font-medium flex items-center ${
+                    activeTab === "recommendations"
+                      ? darkMode
+                        ? "border-b-2 border-indigo-400 text-indigo-400"
+                        : "border-b-2 border-indigo-600 text-indigo-600"
+                      : darkMode
+                      ? "text-gray-400 hover:text-gray-300"
+                      : "text-gray-600 hover:text-gray-800"
+                  }`}
+                  onClick={() => setActiveTab("recommendations")}
+                >
+                  <Carrot className="h-4 w-4 mr-2" />
+                  Recommendations
+                </button>
+              </>
             )}
           </div>
 
@@ -347,15 +339,16 @@ function App() {
                 loading={loading}
                 darkMode={darkMode}
               />
+              {/* <PredictionResult result={formData.result} darkMode={darkMode} /> */}
             </div>
           )}
 
           {activeTab === "history" && token && (
-            <HistoryList
-              history={history}
-              historyError={historyError}
-              darkMode={darkMode}
-            />
+            <HistoryList history={history} historyError={historyError} darkMode={darkMode} />
+          )}
+
+          {activeTab === "recommendations" && token && formData.result && (
+            <RecommendationPage predictionData={formData.result} darkMode={darkMode} />
           )}
         </div>
       )}
@@ -370,9 +363,7 @@ function App() {
             <button
               onClick={() => setShowLoginModal(false)}
               className={`absolute top-4 right-4 p-1 rounded-full ${
-                darkMode
-                  ? "text-gray-400 hover:text-white hover:bg-gray-700"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                darkMode ? "text-gray-400 hover:text-white hover:bg-gray-700" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
               }`}
             >
               <svg
@@ -382,12 +373,7 @@ function App() {
                 viewBox="0 0 24 24"
                 stroke="currentColor"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
             <div className="p-6">
@@ -395,7 +381,7 @@ function App() {
                 setToken={(token) => {
                   setToken(token);
                   setShowLoginModal(false);
-                  setShowLandingPage(false); // Redirect to main page after login
+                  setShowLandingPage(false);
                 }}
                 darkMode={darkMode}
                 showSignup={() => {
@@ -418,9 +404,7 @@ function App() {
             <button
               onClick={() => setShowSignupModal(false)}
               className={`absolute top-4 right-4 p-1 rounded-full ${
-                darkMode
-                  ? "text-gray-400 hover:text-white hover:bg-gray-700"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                darkMode ? "text-gray-400 hover:text-white hover:bg-gray-700" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
               }`}
             >
               <svg
@@ -430,12 +414,7 @@ function App() {
                 viewBox="0 0 24 24"
                 stroke="currentColor"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
             <div className="p-6">
@@ -443,7 +422,7 @@ function App() {
                 setToken={(token) => {
                   setToken(token);
                   setShowSignupModal(false);
-                  setShowLandingPage(false); // Redirect to main page after signup
+                  setShowLandingPage(false);
                 }}
                 darkMode={darkMode}
                 showLogin={() => {

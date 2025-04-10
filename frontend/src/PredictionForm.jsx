@@ -1,16 +1,6 @@
 "use client";
 
-import {
-  Activity,
-  Droplets,
-  Heart,
-  Ruler,
-  Weight,
-  LineChart,
-  Users,
-  Calendar,
-  Baby,
-} from "lucide-react";
+import { Activity, Droplets, Heart, Ruler, Weight, LineChart, Users, Calendar, Baby, Dumbbell } from 'lucide-react';
 import PredictionResult from "./PredictionResult";
 
 function PredictionForm({
@@ -99,6 +89,7 @@ function PredictionForm({
             </div>
           )}
 
+          
           <div className="space-y-2">
             <label
               className={`block text-sm font-medium ${
@@ -285,6 +276,31 @@ function PredictionForm({
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
+                <Calendar className="h-4 w-4" />
+                <span>Age (years)</span>
+              </div>
+              <input
+                type="number"
+                name="Age"
+                placeholder="Enter Age"
+                value={formData.Age}
+                onChange={handleChange}
+                required
+                className={`w-full p-3 rounded-lg border ${
+                  darkMode
+                    ? "border-gray-600 bg-gray-700 text-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                    : "border-gray-300 bg-white text-gray-900 focus:border-purple-500 focus:ring-purple-500"
+                } shadow-sm transition-colors duration-200`}
+              />
+            </label>
+          </div>
+          <div className="space-y-2">
+            <label
+              className={`block text-sm font-medium ${
+                darkMode ? "text-gray-200" : "text-gray-700"
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
                 <LineChart className="h-4 w-4" />
                 <span>Diabetes Pedigree Function</span>
               </div>
@@ -312,22 +328,20 @@ function PredictionForm({
               </p>
             </label>
           </div>
-
-          <div className="space-y-2">
+{/* Activity Level Field - ADDED */}
+<div className="space-y-2">
             <label
               className={`block text-sm font-medium ${
                 darkMode ? "text-gray-200" : "text-gray-700"
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
-                <Calendar className="h-4 w-4" />
-                <span>Age (years)</span>
+                <Dumbbell className="h-4 w-4" />
+                <span>Activity Level</span>
               </div>
-              <input
-                type="number"
-                name="Age"
-                placeholder="Enter Age"
-                value={formData.Age}
+              <select
+                name="ActivityLevel"
+                value={formData.ActivityLevel || ""}
                 onChange={handleChange}
                 required
                 className={`w-full p-3 rounded-lg border ${
@@ -335,7 +349,21 @@ function PredictionForm({
                     ? "border-gray-600 bg-gray-700 text-gray-200 focus:border-purple-500 focus:ring-purple-500"
                     : "border-gray-300 bg-white text-gray-900 focus:border-purple-500 focus:ring-purple-500"
                 } shadow-sm transition-colors duration-200`}
-              />
+              >
+                <option value="" disabled>
+                  Select Activity Level
+                </option>
+                <option value="Low">Low</option>
+                <option value="Moderate">Moderate</option>
+                <option value="High">High</option>
+              </select>
+              <p
+                className={`mt-1 text-xs ${
+                  darkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                Low:no exercise, Moderate: 3-5 days/week, High:daily
+              </p>
             </label>
           </div>
         </div>
