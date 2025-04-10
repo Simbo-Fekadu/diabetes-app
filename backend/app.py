@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import pickle
 import os
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
@@ -16,8 +16,12 @@ CORS(app)
 app.config['JWT_SECRET_KEY'] = 'your-secret-key-here'  # Change this in production!
 jwt = JWTManager(app)
 
+# Define the absolute path to users.db
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+DATABASE_PATH = os.path.join(BASE_DIR, 'users.db')
+
 def init_db():
-    with sqlite3.connect('users.db') as conn:
+    with sqlite3.connect(DATABASE_PATH) as conn:
         c = conn.cursor()
         # Create users table
         c.execute('''CREATE TABLE IF NOT EXISTS users 
@@ -39,7 +43,7 @@ if not os.path.exists(MODEL_PATH):
     X = data.drop('Outcome', axis=1)
     y = data['Outcome']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, random_state=42)
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
@@ -66,7 +70,7 @@ def register():
     hashed_password = pbkdf2_sha256.hash(password)
     
     try:
-        with sqlite3.connect('users.db') as conn:
+        with sqlite3.connect(DATABASE_PATH) as conn:
             c = conn.cursor()
             c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
             user_id = c.lastrowid
@@ -83,7 +87,7 @@ def login():
     username = data.get('username')
     password = data.get('password')
     
-    with sqlite3.connect('users.db') as conn:
+    with sqlite3.connect(DATABASE_PATH) as conn:
         c = conn.cursor()
         c.execute("SELECT id, password FROM users WHERE username = ?", (username,))
         user = c.fetchone()
@@ -125,23 +129,29 @@ def predict():
         except ValueError as e:
             return jsonify({'message': f'Invalid numeric value: {str(e)}'}), 400
 
-        # Make prediction
+        # Make prediction with probabilities
         input_array = np.asarray(input_data).reshape(1, -1)
-        prediction = model.predict(input_array)[0]
+        prob = model.predict_proba(input_array)[0][1]  # Probability of being diabetic (class 1)
+        print(f"Prediction probability: {prob}")  # Debug log
         
-        # Calculate risk percentage
-        glucose = float(data['Glucose'])
-        bmi = float(data['BMI'])
-        blood_pressure = float(data['BloodPressure'])
-        sex = data['Sex']
-        risk_percentage = min(100, (glucose / 2) + (bmi * 1.5))  # Adjust this formula as needed
-        
-        if prediction == 0:
+        # Define thresholds for prediction
+        if prob < 0.4:
             result = 'Not Diabetic'
             diet_suggestion = 'Continue with a balanced diet rich in vegetables and whole grains.'
-        else:
+        elif prob >= 0.4 and prob <= 0.6:
+            result = 'Borderline Risk'
+            diet_suggestion = 'You are at risk of developing diabetes. Reduce sugar and carb intake, increase physical activity, and monitor your health regularly.'
+        else:  # prob > 0.6
             result = 'Diabetic'
             diet_suggestion = 'Adopt a low-sugar, low-carb diet and consult a doctor for monitoring.'
+        
+        # Use the prediction probability as the risk percentage (scaled to 0-100)
+        risk_percentage = prob * 100  # Convert probability to percentage
+        
+        # Extract other fields
+        glucose = float(data['Glucose'])
+        blood_pressure = float(data['BloodPressure'])
+        sex = data['Sex']
         
         # Attempt to save to history if user is authenticated
         user_id = None
@@ -155,11 +165,11 @@ def predict():
         
         if user_id:
             try:
-                with sqlite3.connect('users.db') as conn:
+                with sqlite3.connect(DATABASE_PATH) as conn:
                     c = conn.cursor()
                     c.execute(
                         "INSERT INTO predictions (user_id, prediction, glucose, blood_pressure, risk_percentage, diet_suggestion, sex) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                        (int(user_id), result, glucose, blood_pressure, risk_percentage, diet_suggestion, sex)  # Convert user_id back to int for database
+                        (int(user_id), result, glucose, blood_pressure, risk_percentage, diet_suggestion, sex)
                     )
                     conn.commit()
                     print(f"Prediction saved for user_id: {user_id}")  # Debug log
@@ -172,7 +182,8 @@ def predict():
             'glucose': glucose,
             'blood_pressure': blood_pressure,
             'risk_percentage': risk_percentage,
-            'diet_suggestion': diet_suggestion
+            'diet_suggestion': diet_suggestion,
+            'probability': prob  # Included for debugging
         })
     except Exception as e:
         print(f"Error in predict endpoint: {e}")  # Debug log
@@ -183,10 +194,10 @@ def predict():
 def get_history():
     user_id = get_jwt_identity()
     print(f"Fetching history for user_id: {user_id}")  # Debug log
-    with sqlite3.connect('users.db') as conn:
+    with sqlite3.connect(DATABASE_PATH) as conn:
         c = conn.cursor()
         c.execute(
-            "SELECT prediction, glucose, blood_pressure, risk_percentage, timestamp, sex FROM predictions WHERE user_id = ? ORDER BY timestamp DESC",
+            "SELECT prediction, glucose, blood_pressure, risk_percentage, diet_suggestion, timestamp FROM predictions WHERE user_id = ? ORDER BY timestamp DESC",
             (int(user_id),)  # Convert user_id back to int for database query
         )
         history = [
@@ -195,8 +206,8 @@ def get_history():
                 'glucose': row[1],
                 'blood_pressure': row[2],
                 'risk_percentage': row[3],
-                'timestamp': row[4],
-                'sex': row[5]
+                'diet_suggestion': row[4],
+                'timestamp': row[5]
             } for row in c.fetchall()
         ]
         print(f"History fetched: {history}")  # Debug log

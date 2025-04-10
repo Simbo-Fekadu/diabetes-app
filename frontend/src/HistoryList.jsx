@@ -52,6 +52,8 @@ function HistoryList({ history, historyError, darkMode }) {
                     className={`text-lg font-semibold ${
                       entry.prediction === "Diabetic"
                         ? "text-red-600 dark:text-red-400"
+                        : entry.prediction === "Borderline Risk"
+                        ? "text-yellow-600 dark:text-yellow-400"
                         : "text-green-600 dark:text-green-400"
                     }`}
                   >
@@ -78,9 +80,9 @@ function HistoryList({ history, historyError, darkMode }) {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Sex
+                    Recommendation
                   </p>
-                  <p>{entry.sex}</p>
+                  <p>{entry.diet_suggestion}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
