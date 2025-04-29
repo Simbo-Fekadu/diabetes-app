@@ -57,7 +57,10 @@ const NutritionRecommendation = ({ predictionData, darkMode }) => {
     if (predictionData?.result) {
       fetchRecommendations();
     }
-  }, [predictionData?.result?.prediction]); // Depend on prediction result to re-fetch
+  }, [predictionData?.result?.prediction]);
+
+  const { prediction } = predictionData?.result || {};
+  const isDiabetic = prediction === 'Diabetic' || prediction === 'Borderline Risk';
 
   return (
     <div className="space-y-4">
@@ -118,6 +121,10 @@ const NutritionRecommendation = ({ predictionData, darkMode }) => {
 
       {nutritionData && !loading && !error && (
         <div className="space-y-6">
+          <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>
+            Your daily nutrition targets based on your {isDiabetic ? 'diabetic' : 'non-diabetic'} profile and activity level.
+          </p>
+
           <div>
             <h4 className={`text-lg font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Your BMI

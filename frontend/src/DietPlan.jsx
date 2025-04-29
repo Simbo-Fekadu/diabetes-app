@@ -71,7 +71,10 @@ const DietPlan = ({ recommendationData, predictionData, darkMode }) => {
 
   // Generate the 7-day meal plan
   const mealPlan = useMemo(() => {
-    if (!nutrition) return {};
+    if (!nutrition) {
+      console.log('No nutrition data available for meal plan generation');
+      return {};
+    }
 
     // Daily targets
     const dailyCalories = nutrition.energy || 2000;
@@ -112,41 +115,50 @@ const DietPlan = ({ recommendationData, predictionData, darkMode }) => {
         dinner,
       };
     }
+    console.log('Generated meal plan:', plan);
     return plan;
   }, [nutrition, prediction, ActivityLevel]);
 
   return (
     <div className="space-y-4">
-      <h3 className={`text-xl font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>7-Day Meal Plan</h3>
+      <h3 className={`text-xl font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+        7-Day Meal Plan
+      </h3>
       <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>
         Dynamically generated meal plan based on your {isDiabetic ? 'diabetic' : 'non-diabetic'} profile, nutrition goals, and {ActivityLevel || 'Low'} activity level.
       </p>
 
-      {Object.keys(mealPlan).map((day) => (
-        <div key={day} className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-          <button
-            onClick={() => toggleDay(day)}
-            className={`w-full flex justify-between items-center py-3 text-left text-lg font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
-          >
-            {day}
-            {expandedDay === day ? (
-              <ChevronUp className="w-5 h-5" />
-            ) : (
-              <ChevronDown className="w-5 h-5" />
+      {Object.keys(mealPlan).length > 0 ? (
+        Object.keys(mealPlan).map((day) => (
+          <div key={day} className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+            <button
+              onClick={() => toggleDay(day)}
+              className={`w-full flex justify-between items-center py-3 text-left text-lg font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
+            >
+              {day}
+              {expandedDay === day ? (
+                <ChevronUp className="w-5 h-5" />
+              ) : (
+                <ChevronDown className="w-5 h-5" />
+              )}
+            </button>
+            {expandedDay === day && (
+              <div className={`pl-4 pb-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                <p><strong>Breakfast:</strong> {mealPlan[day].breakfast.name} ({mealPlan[day].breakfast.portion})</p>
+                <p className="pl-2">Calories: {mealPlan[day].breakfast.calories.toFixed(0)} kcal, Carbs: {mealPlan[day].breakfast.carbs}g, Protein: {mealPlan[day].breakfast.protein}g, Fat: {mealPlan[day].breakfast.fat}g</p>
+                <p><strong>Lunch:</strong> {mealPlan[day].lunch.name} ({mealPlan[day].lunch.portion})</p>
+                <p className="pl-2">Calories: {mealPlan[day].lunch.calories.toFixed(0)} kcal, Carbs: {mealPlan[day].lunch.carbs}g, Protein: {mealPlan[day].lunch.protein}g, Fat: {mealPlan[day].lunch.fat}g</p>
+                <p><strong>Dinner:</strong> {mealPlan[day].dinner.name} ({mealPlan[day].dinner.portion})</p>
+                <p className="pl-2">Calories: {mealPlan[day].dinner.calories.toFixed(0)} kcal, Carbs: {mealPlan[day].dinner.carbs}g, Protein: {mealPlan[day].dinner.protein}g, Fat: {mealPlan[day].dinner.fat}g</p>
+              </div>
             )}
-          </button>
-          {expandedDay === day && (
-            <div className={`pl-4 pb-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              <p><strong>Breakfast:</strong> {mealPlan[day].breakfast.name} ({mealPlan[day].breakfast.portion})</p>
-              <p className="pl-2">Calories: {mealPlan[day].breakfast.calories.toFixed(0)} kcal, Carbs: {mealPlan[day].breakfast.carbs}g, Protein: {mealPlan[day].breakfast.protein}g, Fat: {mealPlan[day].breakfast.fat}g</p>
-              <p><strong>Lunch:</strong> {mealPlan[day].lunch.name} ({mealPlan[day].lunch.portion})</p>
-              <p className="pl-2">Calories: {mealPlan[day].lunch.calories.toFixed(0)} kcal, Carbs: {mealPlan[day].lunch.carbs}g, Protein: {mealPlan[day].lunch.protein}g, Fat: {mealPlan[day].lunch.fat}g</p>
-              <p><strong>Dinner:</strong> {mealPlan[day].dinner.name} ({mealPlan[day].dinner.portion})</p>
-              <p className="pl-2">Calories: {mealPlan[day].dinner.calories.toFixed(0)} kcal, Carbs: {mealPlan[day].dinner.carbs}g, Protein: {mealPlan[day].dinner.protein}g, Fat: {mealPlan[day].dinner.fat}g</p>
-            </div>
-          )}
-        </div>
-      ))}
+          </div>
+        ))
+      ) : (
+        <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>
+          No meal plan available. Please ensure nutrition data is provided.
+        </p>
+      )}
     </div>
   );
 };
