@@ -2,17 +2,17 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { Moon, Sun, LogIn, LogOut, Activity, History } from "lucide-react";
+import { Moon, Sun, LogIn, LogOut, Activity, History, Apple } from "lucide-react";
 import Login from "./Login";
 import Signup from "./Signup";
 import PredictionForm from "./PredictionForm";
 import PredictionResult from "./PredictionResult";
 import HistoryList from "./HistoryList";
 import LandingPage from "./LandingPage";
+import RecommendationPage from "./RecommendationPage";
 
 function App() {
-  const [token, setToken] = useState(null);
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     Pregnancies: "",
     Glucose: "",
     BloodPressure: "",
@@ -23,8 +23,13 @@ function App() {
     DiabetesPedigreeFunction: "",
     Age: "",
     Sex: "",
+    ActivityLevel: "Medium",
+    Goal: "Standard",
     result: null,
-  });
+  };
+
+  const [token, setToken] = useState(null);
+  const [formData, setFormData] = useState(initialFormData);
   const [history, setHistory] = useState([]);
   const [historyError, setHistoryError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -39,9 +44,7 @@ function App() {
     if (savedMode !== null) {
       setDarkMode(savedMode === "true");
     } else {
-      const prefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches;
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       setDarkMode(prefersDark);
     }
   }, []);
@@ -69,12 +72,9 @@ function App() {
           });
           console.log("Token is valid, setting token state");
           setToken(storedToken);
-          setShowLandingPage(false); // Redirect to main page if token is valid
+          setShowLandingPage(false);
         } catch (error) {
-          console.log(
-            "Token validation failed:",
-            error.response?.data || error.message
-          );
+          console.log("Token validation failed:", error.response?.data || error.message);
           console.log("Clearing invalid/expired token");
           localStorage.removeItem("token");
           setToken(null);
@@ -114,9 +114,7 @@ function App() {
     setLoading(true);
     console.log("Token during predict:", token);
     if (!token) {
-      console.log(
-        "No token available, prediction will not be saved to history"
-      );
+      console.log("No token available, prediction will not be saved to history");
     }
     try {
       const heightInCm = parseFloat(formData.Height);
@@ -132,8 +130,7 @@ function App() {
 
       const bmi = weight / (heightInMeters * heightInMeters);
 
-      const pregnancies =
-        formData.Sex === "Male" ? "0" : formData.Pregnancies || "0";
+      const pregnancies = formData.Sex === "Male" ? "0" : formData.Pregnancies || "0";
 
       const submissionData = new URLSearchParams({
         ...formData,
@@ -152,11 +149,7 @@ function App() {
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
           };
       console.log("Sending predict request with config:", config);
-      const response = await axios.post(
-        "http://127.0.0.1:5000/predict",
-        submissionData,
-        config
-      );
+      const response = await axios.post("http://127.0.0.1:5000/predict", submissionData, config);
       setFormData({ ...formData, result: response.data });
       if (token) {
         console.log("Fetching history after prediction");
@@ -195,14 +188,10 @@ function App() {
       setHistory(response.data.history || []);
       setHistoryError(null);
     } catch (error) {
-      console.error(
-        "History fetch failed:",
-        error.response?.data || error.message
-      );
+      console.error("History fetch failed:", error.response?.data || error.message);
       setHistory([]);
       setHistoryError(
-        "Failed to fetch history: " +
-          (error.response?.data.message || "Server error")
+        "Failed to fetch history: " + (error.response?.data.message || "Server error")
       );
     }
   };
@@ -212,6 +201,7 @@ function App() {
     setHistory([]);
     setHistoryError(null);
     setShowLandingPage(true);
+    setFormData(initialFormData); // Reset formData on logout
   };
 
   const handleTryIt = () => {
@@ -225,6 +215,15 @@ function App() {
 
   const handleLogoClick = () => {
     setShowLandingPage(true);
+    setFormData(initialFormData); // Reset formData when returning to landing page
+  };
+
+  const handleFormSubmit = () => {
+    setActiveTab("recommendations");
+  };
+
+  const resetFormData = () => {
+    setFormData(initialFormData);
   };
 
   return (
@@ -311,7 +310,10 @@ function App() {
                   ? "text-gray-400 hover:text-gray-300"
                   : "text-gray-600 hover:text-gray-800"
               }`}
-              onClick={() => setActiveTab("predict")}
+              onClick={() => {
+                setActiveTab("predict");
+                resetFormData(); // Reset formData when switching to Predict tab
+              }}
             >
               <Activity className="h-4 w-4 mr-2" />
               Predict
@@ -336,6 +338,23 @@ function App() {
                 History
               </button>
             )}
+            {formData.result && formData.result.prediction !== "Error" && (
+              <button
+                className={`px-4 py-2 font-medium flex items-center ${
+                  activeTab === "recommendations"
+                    ? darkMode
+                      ? "border-b-2 border-indigo-400 text-indigo-400"
+                      : "border-b-2 border-indigo-600 text-indigo-600"
+                    : darkMode
+                    ? "text-gray-400 hover:text-gray-300"
+                    : "text-gray-600 hover:text-gray-800"
+                }`}
+                onClick={() => setActiveTab("recommendations")}
+              >
+                <Apple className="h-4 w-4 mr-2" />
+                Recommendations
+              </button>
+            )}
           </div>
 
           {activeTab === "predict" && (
@@ -346,6 +365,7 @@ function App() {
                 handleSubmit={handleSubmit}
                 loading={loading}
                 darkMode={darkMode}
+                onFormSubmit={handleFormSubmit}
               />
             </div>
           )}
@@ -354,6 +374,13 @@ function App() {
             <HistoryList
               history={history}
               historyError={historyError}
+              darkMode={darkMode}
+            />
+          )}
+
+          {activeTab === "recommendations" && formData.result && (
+            <RecommendationPage
+              predictionData={formData}
               darkMode={darkMode}
             />
           )}
@@ -395,7 +422,7 @@ function App() {
                 setToken={(token) => {
                   setToken(token);
                   setShowLoginModal(false);
-                  setShowLandingPage(false); // Redirect to main page after login
+                  setShowLandingPage(false);
                 }}
                 darkMode={darkMode}
                 showSignup={() => {
@@ -443,7 +470,7 @@ function App() {
                 setToken={(token) => {
                   setToken(token);
                   setShowSignupModal(false);
-                  setShowLandingPage(false); // Redirect to main page after signup
+                  setShowLandingPage(false);
                 }}
                 darkMode={darkMode}
                 showLogin={() => {
@@ -458,5 +485,4 @@ function App() {
     </div>
   );
 }
-
 export default App;

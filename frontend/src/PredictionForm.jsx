@@ -1,16 +1,6 @@
 "use client";
 
-import {
-  Activity,
-  Droplets,
-  Heart,
-  Ruler,
-  Weight,
-  LineChart,
-  Users,
-  Calendar,
-  Baby,
-} from "lucide-react";
+import { Activity, Droplets, Heart, Ruler, Weight, LineChart, Users, Calendar, Baby, Dumbbell } from 'lucide-react';
 import PredictionResult from "./PredictionResult";
 
 function PredictionForm({
@@ -19,6 +9,7 @@ function PredictionForm({
   handleSubmit,
   loading,
   darkMode,
+  onFormSubmit,
 }) {
   return (
     <div
@@ -35,8 +26,7 @@ function PredictionForm({
           Diabetes Risk Assessment
         </h2>
         <p className={`${darkMode ? "text-gray-300" : "text-gray-600"}`}>
-          Enter your health metrics below for a personalized diabetes risk
-          prediction
+          Enter your health metrics below for a personalized diabetes risk prediction
         </p>
       </div>
 
@@ -89,12 +79,20 @@ function PredictionForm({
                   placeholder="Enter Number of Pregnancies"
                   value={formData.Pregnancies}
                   onChange={handleChange}
+                  required
                   className={`w-full p-3 rounded-lg border ${
                     darkMode
                       ? "border-gray-600 bg-gray-700 text-gray-200 focus:border-purple-500 focus:ring-purple-500"
                       : "border-gray-300 bg-white text-gray-900 focus:border-purple-500 focus:ring-purple-500"
                   } shadow-sm transition-colors duration-200`}
                 />
+                <p
+                  className={`mt-1 text-xs ${
+                    darkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
+                  Enter the total number of pregnancies (e.g., 0 to 10).
+                </p>
               </label>
             </div>
           )}
@@ -122,6 +120,13 @@ function PredictionForm({
                     : "border-gray-300 bg-white text-gray-900 focus:border-purple-500 focus:ring-purple-500"
                 } shadow-sm transition-colors duration-200`}
               />
+              <p
+                className={`mt-1 text-xs ${
+                  darkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                Fasting glucose level; normal range: 70–99 mg/dL. E.g., 120 mg/dL.
+              </p>
             </label>
           </div>
 
@@ -148,6 +153,13 @@ function PredictionForm({
                     : "border-gray-300 bg-white text-gray-900 focus:border-purple-500 focus:ring-purple-500"
                 } shadow-sm transition-colors duration-200`}
               />
+              <p
+                className={`mt-1 text-xs ${
+                  darkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                Systolic pressure; normal range: 90–120 mmHg. E.g., 80 mmHg.
+              </p>
             </label>
           </div>
 
@@ -179,7 +191,7 @@ function PredictionForm({
                   darkMode ? "text-gray-400" : "text-gray-500"
                 }`}
               >
-                Typical range for males: 10–20 mm, females: 20–30 mm.
+                Typical range for males: 10–20 mm, females: 20–30 mm. E.g., 15 mm.
               </p>
             </label>
           </div>
@@ -207,6 +219,13 @@ function PredictionForm({
                     : "border-gray-300 bg-white text-gray-900 focus:border-purple-500 focus:ring-purple-500"
                 } shadow-sm transition-colors duration-200`}
               />
+              <p
+                className={`mt-1 text-xs ${
+                  darkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                Fasting insulin level; normal range: 2–25 μU/ml. E.g., 80 μU/ml.
+              </p>
             </label>
           </div>
 
@@ -285,6 +304,39 @@ function PredictionForm({
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
+                <Calendar className="h-4 w-4" />
+                <span>Age (years)</span>
+              </div>
+              <input
+                type="number"
+                name="Age"
+                placeholder="Enter Age"
+                value={formData.Age}
+                onChange={handleChange}
+                required
+                className={`w-full p-3 rounded-lg border ${
+                  darkMode
+                    ? "border-gray-600 bg-gray-700 text-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                    : "border-gray-300 bg-white text-gray-900 focus:border-purple-500 focus:ring-purple-500"
+                } shadow-sm transition-colors duration-200`}
+              />
+              <p
+                className={`mt-1 text-xs ${
+                  darkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                Your age in years (e.g., 30).
+              </p>
+            </label>
+          </div>
+
+          <div className="space-y-2">
+            <label
+              className={`block text-sm font-medium ${
+                darkMode ? "text-gray-200" : "text-gray-700"
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
                 <LineChart className="h-4 w-4" />
                 <span>Diabetes Pedigree Function</span>
               </div>
@@ -307,8 +359,7 @@ function PredictionForm({
                   darkMode ? "text-gray-400" : "text-gray-500"
                 }`}
               >
-                Measures family history of diabetes. Typically between 0.1 and
-                2.0; higher values indicate a stronger family history.
+                Measures family history of diabetes. Typically between 0.1 and 2.0; higher values indicate a stronger family history. E.g., 0.5.
               </p>
             </label>
           </div>
@@ -320,14 +371,12 @@ function PredictionForm({
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
-                <Calendar className="h-4 w-4" />
-                <span>Age (years)</span>
+                <Dumbbell className="h-4 w-4" />
+                <span>Activity Level</span>
               </div>
-              <input
-                type="number"
-                name="Age"
-                placeholder="Enter Age"
-                value={formData.Age}
+              <select
+                name="ActivityLevel"
+                value={formData.ActivityLevel || ""}
                 onChange={handleChange}
                 required
                 className={`w-full p-3 rounded-lg border ${
@@ -335,7 +384,59 @@ function PredictionForm({
                     ? "border-gray-600 bg-gray-700 text-gray-200 focus:border-purple-500 focus:ring-purple-500"
                     : "border-gray-300 bg-white text-gray-900 focus:border-purple-500 focus:ring-purple-500"
                 } shadow-sm transition-colors duration-200`}
-              />
+              >
+                <option value="" disabled>
+                  Select Activity Level
+                </option>
+                <option value="Low">Low</option>
+                <option value="Moderate">Moderate</option>
+                <option value="High">High</option>
+              </select>
+              <p
+                className={`mt-1 text-xs ${
+                  darkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                Low: no exercise, Moderate: 3-5 days/week, High: daily exercise.
+              </p>
+            </label>
+          </div>
+
+          <div className="space-y-2">
+            <label
+              className={`block text-sm font-medium ${
+                darkMode ? "text-gray-200" : "text-gray-700"
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <Activity className="h-4 w-4" />
+                <span>Diet Goal</span>
+              </div>
+              <select
+                name="Goal"
+                value={formData.Goal || ""}
+                onChange={handleChange}
+                required
+                className={`w-full p-3 rounded-lg border ${
+                  darkMode
+                    ? "border-gray-600 bg-gray-700 text-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                    : "border-gray-300 bg-white text-gray-900 focus:border-purple-500 focus:ring-purple-500"
+                } shadow-sm transition-colors duration-200`}
+              >
+                <option value="" disabled>
+                  Select Diet Goal
+                </option>
+                <option value="Cutting">Cutting</option>
+                <option value="Standard">Standard</option>
+                <option value="Bulking">Bulking</option>
+              </select>
+              <p
+                className={`mt-1 text-xs ${
+                  darkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                Cutting: weight loss, Standard: maintenance, Bulking: weight gain.
+              </p>
             </label>
           </div>
         </div>
@@ -352,7 +453,33 @@ function PredictionForm({
               loading ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
-            {loading ? "Predicting..." : "Get Your Prediction"}
+            {loading ? (
+              <>
+                <svg
+                  className="animate-spin h-5 w-5 mr-2 inline-block"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  ></path>
+                </svg>
+                Predicting...
+              </>
+            ) : (
+              "Get Your Prediction"
+            )}
           </button>
         </div>
       </form>
@@ -360,6 +487,20 @@ function PredictionForm({
       {formData.result && (
         <div className="mt-8 border-t pt-6 border-gray-200 dark:border-gray-700">
           <PredictionResult result={formData.result} darkMode={darkMode} />
+          {formData.result.prediction !== "Error" && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={onFormSubmit}
+                className={`py-2 px-4 rounded-lg shadow-md text-base font-medium text-white transition-all duration-200 ${
+                  darkMode
+                    ? "bg-purple-600 hover:bg-purple-700 focus:ring-purple-500"
+                    : "bg-purple-600 hover:bg-purple-700 focus:ring-purple-500"
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 transform hover:scale-[1.01] active:scale-[0.99]`}
+              >
+                See Your Recommendations
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
