@@ -202,6 +202,7 @@ function App() {
     setHistoryError(null);
     setShowLandingPage(true);
     setFormData(initialFormData); // Reset formData on logout
+    setActiveTab("predict"); // Reset to predict tab on logout
   };
 
   const handleTryIt = () => {
@@ -216,10 +217,17 @@ function App() {
   const handleLogoClick = () => {
     setShowLandingPage(true);
     setFormData(initialFormData); // Reset formData when returning to landing page
+    setActiveTab("predict"); // Reset to predict tab
   };
 
   const handleFormSubmit = () => {
     setActiveTab("recommendations");
+  };
+
+  const handleBackToPrediction = () => {
+    console.log("Navigating back to prediction page");
+    setActiveTab("predict");
+    setFormData(initialFormData); // Reset formData when returning to predict tab
   };
 
   const resetFormData = () => {
@@ -382,6 +390,7 @@ function App() {
             <RecommendationPage
               predictionData={formData}
               darkMode={darkMode}
+              onBack={handleBackToPrediction}
             />
           )}
         </div>
@@ -485,4 +494,5 @@ function App() {
     </div>
   );
 }
+
 export default App;
