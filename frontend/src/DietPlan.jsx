@@ -125,7 +125,7 @@ const DietPlan = ({ recommendationData, predictionData, darkMode }) => {
         7-Day Meal Plan
       </h3>
       <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>
-        Dynamically generated meal plan based on your {isDiabetic ? 'diabetic' : 'non-diabetic'} profile, nutrition goals, and {ActivityLevel || 'Low'} activity level.
+         Your meal plan based on your {isDiabetic ? 'diabetic' : 'non-diabetic'} profile, nutrition goals, and {ActivityLevel || 'Low'} activity level.
       </p>
 
       {Object.keys(mealPlan).length > 0 ? (

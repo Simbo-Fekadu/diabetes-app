@@ -37,48 +37,27 @@ def init_db():
 init_db()
 
 MODEL_PATH = 'model.pkl'
-# Load the dataset from an online source
-DATASET_URL = "https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv"
-columns = [
-    "Pregnancies", "Glucose", "BloodPressure", "SkinThickness", "Insulin",
-    "BMI", "DiabetesPedigreeFunction", "Age", "Outcome"
-]
 
-# Load and preprocess the dataset
-print("Loading dataset...")
-data = pd.read_csv(DATASET_URL, names=columns)
-
-# Handle missing values (replace 0 with NaN for certain columns, then impute)
-cols_with_zeros = ["Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI"]
-data[cols_with_zeros] = data[cols_with_zeros].replace(0, np.nan)
-data.fillna(data.median(), inplace=True)
-
-# Split features and target
-X = data.drop("Outcome", axis=1)
-y = data["Outcome"]
+# Load and prepare data once
+data = pd.read_csv('diabetes.csv')
+X = data.drop('Outcome', axis=1)
+y = data['Outcome']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train or load the model
 if not os.path.exists(MODEL_PATH):
     print("Training new model...")
     model = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, random_state=42)
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
-    print(f"Model trained. Test accuracy: {accuracy * 100:.2f}%")
+    print(f"Model trained. Test accuracy: {accuracy:.2f}")
     with open(MODEL_PATH, 'wb') as f:
         pickle.dump(model, f)
-    with open('model_accuracy.txt', 'w') as f:
-        f.write(str(accuracy))
 else:
-    # Load the model and calculate accuracy using the same test split
-    print(f"Loading model from {MODEL_PATH}...")
     model = pickle.load(open(MODEL_PATH, 'rb'))
     y_pred = model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
-    print(f"Model loaded. Test accuracy: {accuracy * 100:.2f}%")
-    with open('model_accuracy.txt', 'w') as f:
-        f.write(str(accuracy))
+    print(f"Model loaded from {MODEL_PATH}. Test accuracy: {accuracy:.2f}")
 
 # Load the model accuracy
 try:
