@@ -37,29 +37,55 @@ def init_db():
 init_db()
 
 MODEL_PATH = 'model.pkl'
+# Load the dataset from an online source
+DATASET_URL = "https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv"
+columns = [
+    "Pregnancies", "Glucose", "BloodPressure", "SkinThickness", "Insulin",
+    "BMI", "DiabetesPedigreeFunction", "Age", "Outcome"
+]
+
+# Load and preprocess the dataset
+print("Loading dataset...")
+data = pd.read_csv(DATASET_URL, names=columns)
+
+# Handle missing values (replace 0 with NaN for certain columns, then impute)
+cols_with_zeros = ["Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI"]
+data[cols_with_zeros] = data[cols_with_zeros].replace(0, np.nan)
+data.fillna(data.median(), inplace=True)
+
+# Split features and target
+X = data.drop("Outcome", axis=1)
+y = data["Outcome"]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train or load the model
 if not os.path.exists(MODEL_PATH):
     print("Training new model...")
-    data = pd.read_csv('diabetes.csv')
-    X = data.drop('Outcome', axis=1)
-    y = data['Outcome']
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     model = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, random_state=42)
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
-    print(f"Model trained. Test accuracy: {accuracy:.2f}")
+    print(f"Model trained. Test accuracy: {accuracy * 100:.2f}%")
     with open(MODEL_PATH, 'wb') as f:
         pickle.dump(model, f)
+    with open('model_accuracy.txt', 'w') as f:
+        f.write(str(accuracy))
 else:
     # Load the model and calculate accuracy using the same test split
-    data = pd.read_csv('diabetes.csv')
-    X = data.drop('Outcome', axis=1)
-    y = data['Outcome']
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    print(f"Loading model from {MODEL_PATH}...")
     model = pickle.load(open(MODEL_PATH, 'rb'))
     y_pred = model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
-    print(f"Model loaded from {MODEL_PATH}. Test accuracy: {accuracy:.2f}")
+    print(f"Model loaded. Test accuracy: {accuracy * 100:.2f}%")
+    with open('model_accuracy.txt', 'w') as f:
+        f.write(str(accuracy))
+
+# Load the model accuracy
+try:
+    with open("model_accuracy.txt", "r") as f:
+        model_accuracy = float(f.read()) * 100  # Convert to percentage
+except FileNotFoundError:
+    model_accuracy = None
 
 @app.route('/')
 def home():
@@ -219,6 +245,63 @@ def get_history():
         ]
         print(f"History fetched: {history}")  # Debug log
     return jsonify({'history': history}), 200
+
+@app.route('/recommend', methods=['POST'])
+def recommend():
+    data = request.form
+    age = float(data['Age'])
+    height = float(data['Height'])  # Already in meters
+    weight = float(data['Weight'])
+    sex = data['Sex']
+    activity_level = data['ActivityLevel']
+    goal = data['Goal']
+    diabetic = data['Diabetic'].lower() == 'true'
+
+    # Calculate BMI
+    bmi = weight / (height * height)
+
+    # Calculate BMR (Basal Metabolic Rate) using Mifflin-St Jeor Equation
+    if sex == "Male":
+        bmr = 10 * weight + 6.25 * (height * 100) - 5 * age + 5
+    else:
+        bmr = 10 * weight + 6.25 * (height * 100) - 5 * age - 161
+
+    # Adjust for activity level
+    activity_multipliers = {"Low": 1.2, "Moderate": 1.55, "High": 1.9}
+    tdee = bmr * activity_multipliers[activity_level]
+
+    # Adjust for goal
+    goal_adjustments = {"Cutting": -300, "Standard": 0, "Bulking": 300}
+    target_calories = tdee + goal_adjustments[goal]
+
+    # Adjust nutrition for diabetic status
+    if diabetic:
+        # Lower carbs for diabetic patients
+        carbs = (target_calories * 0.4) / 4  # 40% of calories from carbs
+        protein = (target_calories * 0.3) / 4  # 30% from protein
+        fat = (target_calories * 0.3) / 9  # 30% from fat
+    else:
+        # Standard macro split
+        carbs = (target_calories * 0.5) / 4  # 50% of calories from carbs
+        protein = (target_calories * 0.25) / 4  # 25% from protein
+        fat = (target_calories * 0.25) / 9  # 25% from fat
+
+    return jsonify({
+        "bmi": round(bmi, 2),
+        "tdee": round(tdee, 2),
+        "nutrition": {
+            "energy": round(target_calories, 2),
+            "carbs": round(carbs, 2),
+            "protein": round(protein, 2),
+            "fat": round(fat, 2),
+        }
+    })
+
+@app.route('/model_accuracy', methods=['GET'])
+def get_model_accuracy():
+    if model_accuracy is None:
+        return jsonify({"error": "Model accuracy not available"}), 500
+    return jsonify({"accuracy": f"{model_accuracy:.2f}%"})
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

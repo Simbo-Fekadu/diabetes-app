@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
+<<<<<<< HEAD
 import { Moon, Sun, LogIn, LogOut, Activity, History, Carrot } from "lucide-react";
+=======
+import { Moon, Sun, LogIn, LogOut, Activity, History, Apple } from "lucide-react";
+>>>>>>> e4dd23383fc0a7d7ec5dbe25933ae2892905bcf7
 import Login from "./Login";
 import Signup from "./Signup";
 import PredictionForm from "./PredictionForm";
@@ -10,10 +14,10 @@ import PredictionForm from "./PredictionForm";
 import HistoryList from "./HistoryList";
 import RecommendationPage from "./RecommendationPage";
 import LandingPage from "./LandingPage";
+import RecommendationPage from "./RecommendationPage";
 
 function App() {
-  const [token, setToken] = useState(null);
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     Pregnancies: "",
     Glucose: "",
     BloodPressure: "",
@@ -24,9 +28,17 @@ function App() {
     DiabetesPedigreeFunction: "",
     Age: "",
     Sex: "",
+<<<<<<< HEAD
     Activity: "",
+=======
+    ActivityLevel: "Medium",
+    Goal: "Standard",
+>>>>>>> e4dd23383fc0a7d7ec5dbe25933ae2892905bcf7
     result: null,
-  });
+  };
+
+  const [token, setToken] = useState(null);
+  const [formData, setFormData] = useState(initialFormData);
   const [history, setHistory] = useState([]);
   const [historyError, setHistoryError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -69,7 +81,7 @@ function App() {
           });
           console.log("Token is valid, setting token state");
           setToken(storedToken);
-          setShowLandingPage(false); // Redirect to main page if token is valid
+          setShowLandingPage(false);
         } catch (error) {
           console.log("Token validation failed:", error.response?.data || error.message);
           console.log("Clearing invalid/expired token");
@@ -126,6 +138,10 @@ function App() {
       }
 
       const bmi = weight / (heightInMeters * heightInMeters);
+<<<<<<< HEAD
+=======
+
+>>>>>>> e4dd23383fc0a7d7ec5dbe25933ae2892905bcf7
       const pregnancies = formData.Sex === "Male" ? "0" : formData.Pregnancies || "0";
 
       const submissionData = new URLSearchParams({
@@ -145,12 +161,16 @@ function App() {
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
           };
       console.log("Sending predict request with config:", config);
+<<<<<<< HEAD
       const response = await axios.post(
         "http://127.0.0.1:5000/predict",
         submissionData,
         config
       );
       console.log("Prediction response:", response.data);
+=======
+      const response = await axios.post("http://127.0.0.1:5000/predict", submissionData, config);
+>>>>>>> e4dd23383fc0a7d7ec5dbe25933ae2892905bcf7
       setFormData({ ...formData, result: response.data });
       if (token) {
         console.log("Fetching history after prediction");
@@ -189,7 +209,13 @@ function App() {
     } catch (error) {
       console.error("History fetch failed:", error.response?.data || error.message);
       setHistory([]);
+<<<<<<< HEAD
       setHistoryError("Failed to fetch history: " + (error.response?.data.message || "Server error"));
+=======
+      setHistoryError(
+        "Failed to fetch history: " + (error.response?.data.message || "Server error")
+      );
+>>>>>>> e4dd23383fc0a7d7ec5dbe25933ae2892905bcf7
     }
   };
 
@@ -200,7 +226,12 @@ function App() {
     setHistoryError(null);
     setFormData({ ...formData, result: null });
     setShowLandingPage(true);
+<<<<<<< HEAD
     setActiveTab("predict");
+=======
+    setFormData(initialFormData); // Reset formData on logout
+    setActiveTab("predict"); // Reset to predict tab on logout
+>>>>>>> e4dd23383fc0a7d7ec5dbe25933ae2892905bcf7
   };
 
   const handleTryIt = () => {
@@ -214,6 +245,22 @@ function App() {
 
   const handleLogoClick = () => {
     setShowLandingPage(true);
+    setFormData(initialFormData); // Reset formData when returning to landing page
+    setActiveTab("predict"); // Reset to predict tab
+  };
+
+  const handleFormSubmit = () => {
+    setActiveTab("recommendations");
+  };
+
+  const handleBackToPrediction = () => {
+    console.log("Navigating back to prediction page");
+    setActiveTab("predict");
+    setFormData(initialFormData); // Reset formData when returning to predict tab
+  };
+
+  const resetFormData = () => {
+    setFormData(initialFormData);
   };
 
   return (
@@ -286,7 +333,10 @@ function App() {
                   ? "text-gray-400 hover:text-gray-300"
                   : "text-gray-600 hover:text-gray-800"
               }`}
-              onClick={() => setActiveTab("predict")}
+              onClick={() => {
+                setActiveTab("predict");
+                resetFormData(); // Reset formData when switching to Predict tab
+              }}
             >
               <Activity className="h-4 w-4 mr-2" />
               Predict
@@ -328,6 +378,23 @@ function App() {
                 </button>
               </>
             )}
+            {formData.result && formData.result.prediction !== "Error" && (
+              <button
+                className={`px-4 py-2 font-medium flex items-center ${
+                  activeTab === "recommendations"
+                    ? darkMode
+                      ? "border-b-2 border-indigo-400 text-indigo-400"
+                      : "border-b-2 border-indigo-600 text-indigo-600"
+                    : darkMode
+                    ? "text-gray-400 hover:text-gray-300"
+                    : "text-gray-600 hover:text-gray-800"
+                }`}
+                onClick={() => setActiveTab("recommendations")}
+              >
+                <Apple className="h-4 w-4 mr-2" />
+                Recommendations
+              </button>
+            )}
           </div>
 
           {activeTab === "predict" && (
@@ -338,6 +405,7 @@ function App() {
                 handleSubmit={handleSubmit}
                 loading={loading}
                 darkMode={darkMode}
+                onFormSubmit={handleFormSubmit}
               />
               {/* <PredictionResult result={formData.result} darkMode={darkMode} /> */}
             </div>
@@ -349,6 +417,14 @@ function App() {
 
           {activeTab === "recommendations" && token && formData.result && (
             <RecommendationPage predictionData={formData.result} darkMode={darkMode} />
+          )}
+
+          {activeTab === "recommendations" && formData.result && (
+            <RecommendationPage
+              predictionData={formData}
+              darkMode={darkMode}
+              onBack={handleBackToPrediction}
+            />
           )}
         </div>
       )}
