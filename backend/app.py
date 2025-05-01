@@ -5,7 +5,7 @@ from passlib.hash import pbkdf2_sha256
 import sqlite3
 import numpy as np
 import pandas as pd
-import pickle
+import joblib
 import os
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
@@ -36,30 +36,25 @@ def init_db():
 
 init_db()
 
-MODEL_PATH = 'model.pkl'
-
-# Load and prepare data once
-data = pd.read_csv('diabetes.csv')
-X = data.drop('Outcome', axis=1)
-y = data['Outcome']
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+MODEL_PATH = 'rmodel.pkl'
 
 if not os.path.exists(MODEL_PATH):
-    print("Training new model...")
-    model = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, random_state=42)
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    print(f"Model trained. Test accuracy: {accuracy:.2f}")
-    with open(MODEL_PATH, 'wb') as f:
-        pickle.dump(model, f)
+    print("Model file not found. Please train and save the model first.")
+    model = None
 else:
-    model = pickle.load(open(MODEL_PATH, 'rb'))
-    y_pred = model.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    print(f"Model loaded from {MODEL_PATH}. Test accuracy: {accuracy:.2f}")
+    model = joblib.load(MODEL_PATH)
+    print(f"Model loaded from {MODEL_PATH}")
+# TEMP TEST
+# TEMP TEST
+if model:
+    sample_input = np.array([[2, 120, 70, 20, 85, 32.5, 0.5, 25]])  # Example test input
+    prediction = model.predict(sample_input)
+    result = "Diabetic" if prediction[0] == 1 else "Non-Diabetic"
+    print(f"Sample prediction: {prediction[0]} => {result}")
+ # Will print 0 or 1
 
-# Load the model accuracy
+
+ # Load the model accuracy
 try:
     with open("model_accuracy.txt", "r") as f:
         model_accuracy = float(f.read()) * 100  # Convert to percentage
@@ -117,9 +112,10 @@ def predict():
     try:
         # Validate form data
         required_fields = [
-            'Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness',
-            'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age', 'Sex'
-        ]
+    'Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness',
+    'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age'
+]
+
         data = request.form
         print(f"Received form data: {dict(data)}")  # Debug log
         for field in required_fields:
