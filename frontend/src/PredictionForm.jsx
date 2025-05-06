@@ -23,7 +23,7 @@ function PredictionForm({
             darkMode ? "text-white" : "text-gray-800"
           }`}
         >
-          Diabetes Risk Assessment
+          Diabetes Risk Prediction
         </h2>
         <p className={`${darkMode ? "text-gray-300" : "text-gray-600"}`}>
           Enter your health metrics below for a personalized diabetes risk prediction
