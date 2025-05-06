@@ -145,4 +145,36 @@ This Diabetes Prediction App is a robust, full-stack application combining:
 - Interactive React frontend for data input, result visualization, and user engagement.
 - A well-defined data flow and logic ensuring accurate predictions and personalized guidance.
 
+ # new function
+ builk data import from doctors for testing
+ user history data
+ learing from the multiple data
  
+
+1. **ROC (Receiver Operating Characteristic)**:
+
+   * The ROC curve is a graphical representation of a model's performance across different thresholds.
+   * It plots the **True Positive Rate (TPR)** on the Y-axis and the **False Positive Rate (FPR)** on the X-axis.
+   * The ROC curve shows how the model's performance changes as you vary the decision threshold for classifying positive vs. negative classes.
+
+2. **AUC (Area Under the Curve)**:
+
+   * AUC refers to the **area under the ROC curve**.
+   * It is a scalar value that quantifies the overall ability of the model to discriminate between positive and negative classes.
+   * AUC values range from 0 to 1, where a higher value indicates better model performance.
+
+In short:
+
+* **ROC** is the **curve** itself, showing performance at different thresholds.
+* **AUC** is the **area** under the ROC curve, summarizing the model's overall discriminative power into a single value.
+
+# The dataset is a classic diabetes dataset with the following features:
+
+# Features (X):
+
+# Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin, BMI, DiabetesPedigreeFunction, Age
+
+# Target (y):
+
+# Outcome (0 = No diabetes, 1 = Diabetes)
+
