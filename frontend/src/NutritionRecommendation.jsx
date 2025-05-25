@@ -161,3 +161,6 @@ const NutritionRecommendation = ({ predictionData, darkMode }) => {
 };
 
 export default NutritionRecommendation;
+
+
+ 
