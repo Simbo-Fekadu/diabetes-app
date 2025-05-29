@@ -18,19 +18,23 @@ class DiabetesNutritionAdvisor:
         TDEE = 0.0
 
         # Use Harris-Benedict equation to calculate BMR
-        if sex.lower() == "female":  # Female
-            BMR = 655 + (bodyweight * 9.6) + (1.8 * height * 100) - (4.7 * age)  # Height in cm
-        else:  # Male
-            BMR = 66 + (bodyweight * 13.7) + (5 * height * 100) - (6.8 * age)  # Height in cm
+        if sex.lower() == "female":
+            BMR = 655 + (bodyweight * 9.6) + (1.8 * height * 100) - (4.7 * age)
+        else:
+            BMR = 66 + (bodyweight * 13.7) + (5 * height * 100) - (6.8 * age)
 
-        # Get TDEE based on activity level
-        if activity.lower() == "low":
-            TDEE = BMR * 1.2
-        elif activity.lower() == "medium":
-            TDEE = BMR * 1.55
-        else:  # High
-            TDEE = BMR * 1.9
-
+        # Map activity levels and validate
+        activity = activity.lower()
+        if activity == 'moderate' or activity == 'medium':
+            activity = 'medium'  # Map 'Moderate' or 'Medium' to 'medium'
+        activity_multipliers = {
+            "low": 1.2,
+            "medium": 1.55,
+            "high": 1.9
+        }
+        if activity not in activity_multipliers:
+            raise ValueError(f"Invalid activity level: {activity}. Expected 'low', 'medium', 'moderate', or 'high'.")
+        TDEE = BMR * activity_multipliers[activity]
         return round(TDEE, 2)
 
     def desired_nutrition(self, goal, TDEE, diabetic=False):
@@ -40,22 +44,20 @@ class DiabetesNutritionAdvisor:
             energy = TDEE - 300
         elif goal.lower() == "bulking":
             energy = TDEE + 400
-        else:  # Standard
+        else:  # standard
             energy = TDEE
 
         # For diabetic users, reduce calories by 10-15% and adjust macros
         if diabetic:
-            energy = energy * 0.85  # Reduce by 15%
-            carb_ratio = 0.4  # Lower carbs for diabetics
-            protein_ratio = 0.3  # Higher protein
-            fat_ratio = 0.3  # Balanced fats
+            energy = energy * 0.85
+            carb_ratio = 0.4
+            protein_ratio = 0.3
+            fat_ratio = 0.3
         else:
-            # Standard ratios based on Taiwan Ministry of Health and Welfare
-            carb_ratio = 0.5  # 50% carbs
-            protein_ratio = 0.25  # 25% protein
-            fat_ratio = 0.25  # 25% fat
+            carb_ratio = 0.5
+            protein_ratio = 0.25
+            fat_ratio = 0.25
 
-        # Calculate macronutrients (carbs: 4 kcal/g, protein: 4 kcal/g, fat: 9 kcal/g)
         carbs = (energy * carb_ratio) / 4
         protein = (energy * protein_ratio) / 4
         fat = (energy * fat_ratio) / 9
@@ -69,15 +71,9 @@ class DiabetesNutritionAdvisor:
 
     def get_nutrition_recommendations(self, age, height, weight, sex, activity_level, goal, diabetic=False):
         """Generate nutrition recommendations based on user data."""
-        # Calculate BMI
         bmi = self.bmi_calculate(height, weight)
-
-        # Calculate TDEE
         tdee = self.calculate_desire_TDEE(activity_level, weight, sex, age, height)
-
-        # Calculate desired nutrition
         nutrition = self.desired_nutrition(goal, tdee, diabetic)
-
         return {
             "bmi": bmi,
             "tdee": tdee,
