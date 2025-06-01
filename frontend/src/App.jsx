@@ -1,8 +1,14 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { Moon, Sun, LogIn, LogOut, Activity, History, Apple } from "lucide-react";
+import {
+  Moon,
+  Sun,
+  LogIn,
+  LogOut,
+  Activity,
+  History,
+  Apple,
+} from "lucide-react";
 import Login from "./Login";
 import Signup from "./Signup";
 import PredictionForm from "./PredictionForm";
@@ -44,7 +50,9 @@ function App() {
     if (savedMode !== null) {
       setDarkMode(savedMode === "true");
     } else {
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const prefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      ).matches;
       setDarkMode(prefersDark);
     }
   }, []);
@@ -74,7 +82,10 @@ function App() {
           setToken(storedToken);
           setShowLandingPage(false);
         } catch (error) {
-          console.log("Token validation failed:", error.response?.data || error.message);
+          console.log(
+            "Token validation failed:",
+            error.response?.data || error.message
+          );
           console.log("Clearing invalid/expired token");
           localStorage.removeItem("token");
           setToken(null);
@@ -114,7 +125,9 @@ function App() {
     setLoading(true);
     console.log("Token during predict:", token);
     if (!token) {
-      console.log("No token available, prediction will not be saved to history");
+      console.log(
+        "No token available, prediction will not be saved to history"
+      );
     }
     try {
       const heightInCm = parseFloat(formData.Height);
@@ -130,7 +143,8 @@ function App() {
 
       const bmi = weight / (heightInMeters * heightInMeters);
 
-      const pregnancies = formData.Sex === "Male" ? "0" : formData.Pregnancies || "0";
+      const pregnancies =
+        formData.Sex === "Male" ? "0" : formData.Pregnancies || "0";
 
       const submissionData = new URLSearchParams({
         ...formData,
@@ -149,7 +163,11 @@ function App() {
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
           };
       console.log("Sending predict request with config:", config);
-      const response = await axios.post("http://127.0.0.1:5000/predict", submissionData, config);
+      const response = await axios.post(
+        "http://127.0.0.1:5000/predict",
+        submissionData,
+        config
+      );
       setFormData({ ...formData, result: response.data });
       if (token) {
         console.log("Fetching history after prediction");
@@ -188,10 +206,14 @@ function App() {
       setHistory(response.data.history || []);
       setHistoryError(null);
     } catch (error) {
-      console.error("History fetch failed:", error.response?.data || error.message);
+      console.error(
+        "History fetch failed:",
+        error.response?.data || error.message
+      );
       setHistory([]);
       setHistoryError(
-        "Failed to fetch history: " + (error.response?.data.message || "Server error")
+        "Failed to fetch history: " +
+          (error.response?.data.message || "Server error")
       );
     }
   };
@@ -374,6 +396,8 @@ function App() {
                 loading={loading}
                 darkMode={darkMode}
                 onFormSubmit={handleFormSubmit}
+                isLoggedIn={!!token} // Pass isLoggedIn based on token
+                onShowLogin={() => setShowLoginModal(true)} // Pass function to show login modal
               />
             </div>
           )}
