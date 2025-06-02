@@ -1,6 +1,6 @@
 "use client";
-
-function LandingPage({ onTryIt, onSignUp }) {
+import logo from './assets/logo.png';
+function LandingPage({ onTryIt, onSignUp, onLogin }) {
   const diabetesCategories = [
     { title: "Prediabetes", color: "text-purple-600" },
     { title: "Life With Diabetes", color: "text-blue-600" },
@@ -35,19 +35,21 @@ function LandingPage({ onTryIt, onSignUp }) {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="relative bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 text-white overflow-hidden">
+      <header className="relative bg-gradient-to-br from-purple-00 via-purple-400 to-purple-800 text-white overflow-hidden">
         {/* Navigation */}
         <nav className="relative z-10 flex justify-between items-center p-6">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center transform transition-transform duration-300 hover:scale-110">
-              <span className="text-purple-600 font-bold text-xl">P</span>
-            </div>
+                        <img
+    src={logo}
+    alt="Logo"
+    className="mb-8 h-24" 
+  />
           </div>
           <div className="flex space-x-6 text-sm">
-            <button className="hover:text-purple-200 transition-colors duration-300 hover:underline">
+             <button onClick={onLogin} className="border border-white text-white hover:bg-white hover:text-purple-600 px-4 py-2 rounded-full text-lg transition-all duration-300 hover:shadow-lg hover:scale-105 transform">
               Login
-            </button>
-            <button className="hover:text-purple-200 transition-colors duration-300 hover:underline">
+            </button> 
+            <button onClick={onSignUp} className=" border border-white text-white hover:bg-white hover:text-purple-600 px-4 py-2 rounded-full text-lg transition-all duration-300 hover:shadow-lg hover:scale-105 transform">
               Sign up
             </button>
           </div>
