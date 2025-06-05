@@ -4,6 +4,22 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { Eye, EyeOff, Loader2, Moon, Sun } from "lucide-react";
 
+// Add shimmer animation
+const shimmerKeyframes = `
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+`;
+
+const styleSheet = document.createElement("style");
+styleSheet.textContent = shimmerKeyframes;
+document.head.appendChild(styleSheet);
+
 function Login({ setToken, darkMode: parentDarkMode, showSignup }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -81,32 +97,19 @@ function Login({ setToken, darkMode: parentDarkMode, showSignup }) {
 
   return (
     <div
-      className={`p-8 transition-colors duration-200 ${
-        darkMode ? "bg-gray-800 text-gray-100" : "bg-white text-gray-900"
+      className={`p-8 rounded-2xl transition-colors duration-200 ${
+        darkMode ? "bg-gray-800/95 text-gray-100" : "bg-white/95 text-gray-900"
       }`}
     >
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={toggleDarkMode}
-          className={`p-2 rounded-full ${
-            darkMode
-              ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          }`}
-          aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-        >
-          {darkMode ? (
-            <Sun className="h-5 w-5" />
-          ) : (
-            <Moon className="h-5 w-5" />
-          )}
-        </button>
-      </div>
-
       <div className="text-center mb-8">
+        <div className="flex justify-center mb-4">
+          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center transform transition-all duration-300 hover:scale-105 shadow-lg">
+            <span className="text-white font-bold text-2xl">P</span>
+          </div>
+        </div>
         <h2
-          className={`text-3xl font-bold ${
-            darkMode ? "text-indigo-400" : "text-indigo-600"
+          className={`text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r ${
+            darkMode ? "from-purple-400 to-indigo-400" : "from-purple-600 to-indigo-600"
           }`}
         >
           Welcome Back
@@ -126,20 +129,27 @@ function Login({ setToken, darkMode: parentDarkMode, showSignup }) {
           >
             Username
           </label>
-          <input
-            id="username"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className={`w-full p-3 rounded-md transition-colors focus:outline-none focus:ring-2 ${
-              darkMode
-                ? "bg-gray-700 border-gray-600 text-white focus:ring-indigo-500"
-                : "bg-white border-gray-300 text-gray-900 focus:ring-indigo-500"
-            }`}
-            placeholder="Enter your username"
-            required
-            disabled={isLoading}
-          />
+          <div className="relative">
+            <input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className={`w-full p-3 pl-10 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 ${
+                darkMode
+                  ? "bg-gray-700/50 border-gray-600 text-white focus:ring-purple-500 focus:bg-gray-700"
+                  : "bg-gray-50 border-gray-300 text-gray-900 focus:ring-purple-500 focus:bg-white"
+              } border`}
+              placeholder="Enter your username"
+              required
+              disabled={isLoading}
+            />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -157,15 +167,20 @@ function Login({ setToken, darkMode: parentDarkMode, showSignup }) {
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={`w-full p-3 rounded-md transition-colors pr-10 focus:outline-none focus:ring-2 ${
+              className={`w-full p-3 pl-10 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 ${
                 darkMode
-                  ? "bg-gray-700 border-gray-600 text-white focus:ring-indigo-500"
-                  : "bg-white border-gray-300 text-gray-900 focus:ring-indigo-500"
-              }`}
+                  ? "bg-gray-700/50 border-gray-600 text-white focus:ring-purple-500 focus:bg-gray-700"
+                  : "bg-gray-50 border-gray-300 text-gray-900 focus:ring-purple-500 focus:bg-white"
+              } border`}
               placeholder="Enter your password"
               required
               disabled={isLoading}
             />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
@@ -192,10 +207,10 @@ function Login({ setToken, darkMode: parentDarkMode, showSignup }) {
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className={`h-4 w-4 rounded focus:ring-indigo-500 ${
+              className={`h-4 w-4 rounded-md focus:ring-offset-0 focus:ring-2 transition-all duration-200 ${
                 darkMode
-                  ? "bg-gray-700 border-gray-600 text-indigo-500"
-                  : "border-gray-300 text-indigo-600"
+                  ? "bg-gray-700 border-gray-600 text-purple-500 focus:ring-purple-500"
+                  : "border-gray-300 text-purple-600 focus:ring-purple-500"
               }`}
             />
             <label
@@ -212,8 +227,8 @@ function Login({ setToken, darkMode: parentDarkMode, showSignup }) {
               href="#"
               className={`font-medium hover:underline ${
                 darkMode
-                  ? "text-indigo-400 hover:text-indigo-300"
-                  : "text-indigo-600 hover:text-indigo-500"
+                  ? "text-purple-400 hover:text-purple-300"
+                  : "text-purple-600 hover:text-purple-500"
               }`}
             >
               Forgot password?
@@ -224,32 +239,34 @@ function Login({ setToken, darkMode: parentDarkMode, showSignup }) {
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full flex justify-center items-center py-3 px-4 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
-            darkMode
-              ? "bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-500 disabled:bg-indigo-800 disabled:opacity-70"
-              : "bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-500 disabled:opacity-70"
-          }`}
+          className={`w-full flex justify-center items-center py-4 px-6 rounded-xl text-white font-semibold shadow-xl 
+          bg-gradient-to-r from-purple-600 via-indigo-500 to-purple-600 hover:from-purple-700 hover:via-indigo-600 hover:to-purple-700
+          bg-[length:200%_100%] bg-left hover:bg-right transition-all duration-500
+          transform hover:scale-[1.02] active:scale-[0.98]
+          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 
+          motion-safe:animate-shimmer
+          ${isLoading ? "opacity-70 cursor-not-allowed" : "hover:shadow-2xl hover:shadow-purple-500/20"}`}
         >
           {isLoading ? (
             <>
-              <Loader2 className="animate-spin h-5 w-5 mr-2" />
-              Signing in...
+              <Loader2 className="animate-spin h-5 w-5 mr-3" />
+              <span className="text-lg">Signing in...</span>
             </>
           ) : (
-            "Sign in"
+            <span className="text-lg">Sign in</span>
           )}
         </button>
       </form>
 
       {message && (
         <div
-          className={`mt-4 p-3 rounded-md ${
+          className={`mt-4 p-3 rounded-xl ${
             messageType === "success"
               ? darkMode
-                ? "bg-green-900 text-green-100 border border-green-800"
+                ? "bg-green-900/50 text-green-100 border border-green-800"
                 : "bg-green-50 text-green-800 border border-green-200"
               : darkMode
-              ? "bg-red-900 text-red-100 border border-red-800"
+              ? "bg-red-900/50 text-red-100 border border-red-800"
               : "bg-red-50 text-red-800 border border-red-200"
           }`}
         >
@@ -266,8 +283,8 @@ function Login({ setToken, darkMode: parentDarkMode, showSignup }) {
             onClick={showSignup}
             className={`font-medium hover:underline ${
               darkMode
-                ? "text-indigo-400 hover:text-indigo-300"
-                : "text-indigo-600 hover:text-indigo-500"
+                ? "text-purple-400 hover:text-purple-300"
+                : "text-purple-600 hover:text-purple-500"
             }`}
           >
             Sign up
