@@ -56,6 +56,9 @@ function AppContent() {
       const prefersDark = window.matchMedia(
         "(prefers-color-scheme: dark)"
       ).matches;
+      const prefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      ).matches;
       setDarkMode(prefersDark);
     }
   }, []);
@@ -129,6 +132,8 @@ function AppContent() {
 
       const pregnancies =
         formData.Sex === "Male" ? "0" : formData.Pregnancies || "0";
+      const pregnancies =
+        formData.Sex === "Male" ? "0" : formData.Pregnancies || "0";
 
       const submissionData = new URLSearchParams({
         ...formData,
@@ -186,6 +191,8 @@ function AppContent() {
     } catch (error) {
       setHistory([]);
       setHistoryError(
+        "Failed to fetch history: " +
+          (error.response?.data.message || "Server error")
         "Failed to fetch history: " +
           (error.response?.data.message || "Server error")
       );
