@@ -11,17 +11,6 @@ import {
   Baby,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import {
-  Activity,
-  Droplets,
-  Heart,
-  Ruler,
-  Weight,
-  LineChart,
-  Users,
-  Calendar,
-  Baby,
-} from "lucide-react";
 import PredictionResult from "./PredictionResult";
 
 function PredictionForm({
