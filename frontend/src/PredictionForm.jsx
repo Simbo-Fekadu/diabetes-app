@@ -10,7 +10,6 @@ import {
   Calendar,
   Baby,
 } from "lucide-react";
-import { useState, useEffect } from "react";
 import PredictionResult from "./PredictionResult";
 
 function PredictionForm({
@@ -125,182 +124,43 @@ function PredictionForm({
     handleChange(changes);
   };
 
-  // Calculate progress percentage for the progress bar
-  const progressPercentage = (step / totalSteps) * 100;
-
-  isLoggedIn,
-  onShowLogin,
-}) {
-  const totalSteps = isLoggedIn ? 3 : 2; // 3 steps for logged-in users, 2 for others
-  const [step, setStep] = useState(1);
-  const [showBmiPopup, setShowBmiPopup] = useState(false);
-  const [isPopupVisible, setIsPopupVisible] = useState(false);
-
-  // Log initial props to debug
-  useEffect(() => {
-    console.log("Initial formData:", formData);
-    console.log("isLoggedIn:", isLoggedIn);
-  }, [formData, isLoggedIn]);
-
-  // Calculate BMI and classification with upper limit
-  const calculateBMI = () => {
-    if (!formData.Height || !formData.Weight) return null;
-    const heightInMeters = formData.Height / 100;
-    if (heightInMeters <= 0) return null; // Prevent division by zero
-    let bmi = (formData.Weight / (heightInMeters * heightInMeters)).toFixed(1);
-    // Cap BMI at 60
-    bmi = Math.min(bmi, 60);
-    let classification = "";
-    if (bmi < 18.5) classification = "Underweight";
-    else if (bmi < 25) classification = "Normal";
-    else if (bmi < 30) classification = "Overweight";
-    else classification = "Obese";
-    return { bmi, classification };
-  };
-
-  const bmiData = calculateBMI();
-
-  // Update formData with BMI when calculated (but don't auto-show popup)
-  useEffect(() => {
-    if (bmiData && !formData.BMI) {
-      handleChange({ target: { name: "BMI", value: bmiData.bmi } });
-    }
-  }, [bmiData, formData.BMI, handleChange]);
-
-  const handleNext = () => {
-    if (step === 1 && bmiData) {
-      // Show the popup first
-      setShowBmiPopup(true);
-      setTimeout(() => setIsPopupVisible(true), 100);
-
-      // Auto-proceed to step 2 after 3 seconds
-      setTimeout(() => {
-        setIsPopupVisible(false);
-        setTimeout(() => {
-          setShowBmiPopup(false);
-          setStep(2);
-        }, 300); // Wait for fade out animation
-      }, 3000); // Show popup for 3 seconds
-    } else if (step === 2) {
-      setStep(3);
-    } else if (step === 3 && isLoggedIn) {
-      onFormSubmit(); // Navigate to RecommendationPage
-    }
-  };
-
-  const handleBack = () => {
-    if (step > 1) {
-      setStep(step - 1);
-    }
-  };
-
-  const handleClosePopup = () => {
-    setIsPopupVisible(false);
-    setTimeout(() => setShowBmiPopup(false), 300);
-  };
-
-  const handleRecommendationClick = () => {
-    if (isLoggedIn) {
-      handleNext(); // Proceed to Step 3
-    } else {
-      onShowLogin();
-    }
-  };
-
-  // Fixed Sex selection handler
-  const handleSexChange = (e) => {
-    const value = e.target.value;
-    console.log("Sex selected:", value); // Debug log
-
-    // Update Sex field
-    const changes = {
-      target: {
-        name: "Sex",
-        value,
-      },
-    };
-
-    // If male is selected, also set Pregnancies to 0
-    if (value.toLowerCase() === "male") {
-      handleChange({
-        target: {
-          name: "Pregnancies",
-          value: 0,
-        },
-      });
-    }
-
-    handleChange(changes);
-  };
-
-  // Calculate progress percentage for the progress bar
-  const progressPercentage = (step / totalSteps) * 100;
+// Calculate progress percentage for the progress bar
+const progressPercentage = (step / totalSteps) * 100;
 
   return (
     <div
-      className={`max-w-3xl mx-auto p-8 rounded-xl shadow-lg ${
-        darkMode ? "bg-gray-800" : "bg-white"
-      } transition-all duration-500 ease-in-out transform hover:shadow-xl`}
-      } transition-all duration-500 ease-in-out transform hover:shadow-xl`}
+      className={`max-w-3xl mx-auto p-8 rounded-xl shadow-lg ${darkMode ? "bg-gray-800" : "bg-white"} transition-all duration-500 ease-in-out transform hover:shadow-xl`}
     >
-      <div className="mb-6">
-        <h2
-          className={`text-2xl font-bold mb-2 ${
-            darkMode ? "text-white" : "text-gray-800"
-          } transition-colors duration-300`}
-          } transition-colors duration-300`}
-        >
-          Diabetes Risk Prediction - Step {step} of {totalSteps}
-          Diabetes Risk Prediction - Step {step} of {totalSteps}
-        </h2>
-        <p
-          className={`${
-            darkMode ? "text-gray-300" : "text-gray-600"
-          } transition-colors duration-300`}
-        >
-          {step === 1
-            ? "Enter your height and weight to calculate your BMI."
-            : step === 2
+    <div className="mb-6">
+      <h2
+        className={`text-2xl font-bold mb-2 ${darkMode ? "text-white" : "text-gray-800"} transition-colors duration-300`}
+      >
+        Diabetes Risk Prediction - Step {step} of {totalSteps}
+      </h2>
+      <p
+        className={`${darkMode ? "text-gray-300" : "text-gray-600"} transition-colors duration-300`}
+      >
+        {step === 1
+          ? "Enter your height and weight to calculate your BMI."
+          : step === 2
             ? "Provide your health metrics for a personalized prediction."
             : "Tell us about your activity level and goal."}
-        </p>
+      </p>
 
-        {/* Progress Bar */}
-        <div className="mt-4 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 transition-colors duration-300">
-          <div
-            className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-700 ease-out"
-            style={{ width: `${progressPercentage}%` }}
-          ></div>
-        </div>
-        <p
-          className={`${
-            darkMode ? "text-gray-300" : "text-gray-600"
-          } transition-colors duration-300`}
-        >
-          {step === 1
-            ? "Enter your height and weight to calculate your BMI."
-            : step === 2
-            ? "Provide your health metrics for a personalized prediction."
-            : "Tell us about your activity level and goal."}
-        </p>
-
-        {/* Progress Bar */}
-        <div className="mt-4 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 transition-colors duration-300">
-          <div
-            className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-700 ease-out"
-            style={{ width: `${progressPercentage}%` }}
-          ></div>
-        </div>
+      {/* Progress Bar */}
+      <div className="mt-4 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 transition-colors duration-300">
+        <div
+          className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-700 ease-out"
+          style={{ width: `${progressPercentage}%` }}
+        ></div>
       </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
+    </div>
+    <form onSubmit={handleSubmit} className="space-y-6">
         {step === 1 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-left duration-500">
             <div className="space-y-2 group">
               <label
-                className={`block text-sm font-medium ${
-                  darkMode ? "text-gray-200" : "text-gray-700"
-                } transition-colors duration-300`}
+                className={`block text-sm font-medium ${darkMode ? "text-gray-200" : "text-gray-700"} transition-colors duration-300`}
               >
                 <div className="flex items-center gap-2 mb-1">
                   <Ruler className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
@@ -316,56 +176,16 @@ function PredictionForm({
                   value={formData.Height || ""}
                   onChange={handleChange}
                   required
-                  className={`w-full p-3 rounded-lg border ${
-                    darkMode
+                  className={`w-full p-3 rounded-lg border ${darkMode
                       ? "border-gray-600 bg-gray-700 text-gray-200 focus:border-purple-500 focus:ring-purple-500"
-                      : "border-gray-300 bg-white text-gray-900 focus:border-purple-500 focus:ring-purple-500"
-                  } shadow-sm transition-all duration-300 ease-in-out focus:scale-[1.02] hover:shadow-md`}
-                />
+                      : "border-gray-300 bg-white text-gray-900 focus:border-purple-500 focus:ring-purple-500"} shadow-sm transition-all duration-300 ease-in-out focus:scale-[1.02] hover:shadow-md`} />
               </label>
             </div>
-        {step === 1 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-left duration-500">
             <div className="space-y-2 group">
               <label
-                className={`block text-sm font-medium ${
-                  darkMode ? "text-gray-200" : "text-gray-700"
-                } transition-colors duration-300`}
+                className={`block text-sm font-medium ${darkMode ? "text-gray-200" : "text-gray-700"} transition-colors duration-300`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <Ruler className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
-                  <span>Height (cm)</span>
-                </div>
-                <input
-                  type="number"
-                  name="Height"
-                  placeholder="150–190"
-                  min="0"
-                  max="250"
-                  step="0.1"
-                  value={formData.Height || ""}
-                  onChange={handleChange}
-                  required
-                  className={`w-full p-3 rounded-lg border ${
-                    darkMode
-                      ? "border-gray-600 bg-gray-700 text-gray-200 focus:border-purple-500 focus:ring-purple-500"
-                      : "border-gray-300 bg-white text-gray-900 focus:border-purple-500 focus:ring-purple-500"
-                  } shadow-sm transition-all duration-300 ease-in-out focus:scale-[1.02] hover:shadow-md`}
-                />
-              </label>
-            </div>
-
-            <div className="space-y-2 group">
-            <div className="space-y-2 group">
-              <label
-                className={`block text-sm font-medium ${
-                  darkMode ? "text-gray-200" : "text-gray-700"
-                } transition-colors duration-300`}
-                } transition-colors duration-300`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <Weight className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
-                  <span>Weight (kg)</span>
                   <Weight className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
                   <span>Weight (kg)</span>
                 </div>
@@ -377,114 +197,40 @@ function PredictionForm({
                   max="300"
                   step="0.1"
                   value={formData.Weight || ""}
-                  name="Weight"
-                  placeholder="50–100"
-                  min="0"
-                  max="300"
-                  step="0.1"
-                  value={formData.Weight || ""}
                   onChange={handleChange}
                   required
-                  className={`w-full p-3 rounded-lg border ${
-                    darkMode
+                  className={`w-full p-3 rounded-lg border ${darkMode
                       ? "border-gray-600 bg-gray-700 text-gray-200 focus:border-purple-500 focus:ring-purple-500"
-                      : "border-gray-300 bg-white text-gray-900 focus:border-purple-500 focus:ring-purple-500"
-                  } shadow-sm transition-all duration-300 ease-in-out focus:scale-[1.02] hover:shadow-md`}
-                  } shadow-sm transition-all duration-300 ease-in-out focus:scale-[1.02] hover:shadow-md`}
-                />
+                      : "border-gray-300 bg-white text-gray-900 focus:border-purple-500 focus:ring-purple-500"} shadow-sm transition-all duration-300 ease-in-out focus:scale-[1.02] hover:shadow-md`} />
               </label>
             </div>
-
             {bmiData && !showBmiPopup && (
               <div className="col-span-1 md:col-span-2 mt-4 animate-in fade-in duration-500">
                 <p
-                  className={`text-sm font-medium ${
-                    darkMode ? "text-gray-200" : "text-gray-700"
-                  } transition-colors duration-300`}
-              </label>
-            </div>
-
-            {bmiData && !showBmiPopup && (
-              <div className="col-span-1 md:col-span-2 mt-4 animate-in fade-in duration-500">
-                <p
-                  className={`text-sm font-medium ${
-                    darkMode ? "text-gray-200" : "text-gray-700"
-                  } transition-colors duration-300`}
+                  className={`text-sm font-medium ${darkMode ? "text-gray-200" : "text-gray-700"} transition-colors duration-300`}
                 >
-                  BMI calculated. Click "Next" to proceed to Step 2.
                   BMI calculated. Click "Next" to proceed to Step 2.
                 </p>
               </div>
             )}
-              </div>
-            )}
-
             <div className="col-span-1 md:col-span-2 pt-4">
               <button
                 type="button"
                 onClick={handleNext}
                 disabled={!bmiData}
-                className={`w-full py-3 px-4 rounded-lg shadow-md text-base font-medium text-white transition-all duration-300 ease-in-out ${
-            <div className="col-span-1 md:col-span-2 pt-4">
-              <button
-                type="button"
-                onClick={handleNext}
-                disabled={!bmiData}
-                className={`w-full py-3 px-4 rounded-lg shadow-md text-base font-medium text-white transition-all duration-300 ease-in-out ${
-                  darkMode
-                    ? "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 focus:ring-purple-500"
-                    : "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 focus:ring-purple-500"
-                } focus:outline-none focus:ring-2 focus:ring-offset-2 transform hover:scale-[1.02] active:scale-[0.98] hover:shadow-lg ${
-                  !bmiData
-                    ? "opacity-50 cursor-not-allowed hover:scale-100"
-                    : ""
-                    ? "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 focus:ring-purple-500"
-                    : "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 focus:ring-purple-500"
-                } focus:outline-none focus:ring-2 focus:ring-offset-2 transform hover:scale-[1.02] active:scale-[0.98] hover:shadow-lg ${
-                  !bmiData
-                    ? "opacity-50 cursor-not-allowed hover:scale-100"
-                    : ""
-                }`}
+                className={`w-full py-3 px-4 rounded-lg shadow-md text-base font-medium text-white transition-all duration-300 ease-in-out ${darkMode
+                  ? "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 focus:ring-purple-500"
+                  : "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 focus:ring-purple-500"} focus:outline-none focus:ring-2 focus:ring-offset-2 transform hover:scale-[1.02] active:scale-[0.98] hover:shadow-lg ${!bmiData
+                  ? "opacity-50 cursor-not-allowed hover:scale-100"
+                  : ""}`}
               >
-                Next
-              </button>
-            </div>
                 Next
               </button>
             </div>
           </div>
         )}
-        )}
 
-        {step === 2 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-right duration-500">
-            <div className="space-y-2 group">
-              <label
-                className={`block text-sm font-medium ${
-                  darkMode ? "text-gray-200" : "text-gray-700"
-                } transition-colors duration-300`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <Users className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
-                  <span>Sex</span>
-                </div>
-                <select
-                  name="Sex"
-                  value={formData.Sex || ""}
-                  onChange={handleSexChange}
-                  required
-                  className={`w-full p-3 rounded-lg border ${
-                    darkMode
-                      ? "border-gray-600 bg-gray-700 text-gray-200 focus:border-purple-500 focus:ring-purple-500"
-                      : "border-gray-300 bg-white text-gray-900 focus:border-purple-500 focus:ring-purple-500"
-                  } shadow-sm transition-all duration-300 ease-in-out focus:scale-[1.02] hover:shadow-md cursor-pointer`}
-                >
-                  <option value="">Select Sex</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
-              </label>
-            </div>
+       
         {step === 2 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-right duration-500">
             <div className="space-y-2 group">
@@ -962,34 +708,6 @@ function PredictionForm({
               </label>
             </div>
 
-            <div className="space-y-2 group">
-              <label
-                className={`block text-sm font-medium ${
-                  darkMode ? "text-gray-200" : "text-gray-700"
-                } transition-colors duration-300`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <Weight className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
-                  <span>BMI (calculated)</span>
-                </div>
-                <input
-                  type="text"
-                  value={formData.BMI || ""}
-                  readOnly
-                  className={`w-full p-3 rounded-lg border ${
-                    darkMode
-                      ? "border-gray-600 bg-gray-700 text-gray-200"
-                      : "border-gray-300 bg-gray-100 text-gray-900"
-                  } shadow-sm transition-all duration-300 cursor-not-allowed`}
-                />
-              </label>
-            </div>
-
-            <div className="col-span-1 md:col-span-2 pt-4 flex justify-between gap-4">
-              <button
-                type="button"
-                onClick={handleBack}
-                className={`py-3 px-6 rounded-lg shadow-md text-base font-medium text-white transition-all duration-300 ease-in-out ${
             <div className="space-y-2 group">
               <label
                 className={`block text-sm font-medium ${
@@ -1019,9 +737,6 @@ function PredictionForm({
                 onClick={handleBack}
                 className={`py-3 px-6 rounded-lg shadow-md text-base font-medium text-white transition-all duration-300 ease-in-out ${
                   darkMode
-                    ? "bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 focus:ring-gray-500"
-                    : "bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 focus:ring-gray-400"
-                } focus:outline-none focus:ring-2 focus:ring-offset-2 transform hover:scale-[1.02] active:scale-[0.98] hover:shadow-lg`}
                     ? "bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 focus:ring-gray-500"
                     : "bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 focus:ring-gray-400"
                 } focus:outline-none focus:ring-2 focus:ring-offset-2 transform hover:scale-[1.02] active:scale-[0.98] hover:shadow-lg`}
@@ -1035,9 +750,7 @@ function PredictionForm({
                   darkMode
                     ? "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 focus:ring-purple-500"
                     : "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 focus:ring-purple-500"
-                } focus:outline-none focus:ring-2 focus:ring-offset-2 transform hover:scale-[1.02] active:scale-[0.98] hover:shadow-lg ${
-                  loading ? "opacity-50 cursor-not-allowed hover:scale-100" : ""
-                }`}
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 transform hover:scale-[1.02] active:scale-[0.98] hover:shadow-lg ${loading ? "opacity-50 cursor-not-allowed hover:scale-100" : ""}`}
               >
                 {loading ? (
                   <>
@@ -1321,4 +1034,3 @@ function PredictionForm({
 }
 
 export default PredictionForm;
-

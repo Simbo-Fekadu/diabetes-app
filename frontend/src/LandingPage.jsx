@@ -514,7 +514,6 @@ function LandingPage({ onTryIt, onSignUp, onDoctorPage, onShowLogin, darkMode })
           </div>
         </div>
       </footer>
-      </footer>
     </div>
   );
 }
