@@ -52,10 +52,10 @@ To set up the Diabetes Prediction System locally, follow these steps:
    npm run dev  # Start the development server with Vite
 3. **Backend Setup (if applicable)**:
 
-  ```bash
-  cd server  # Assuming the backend is in a 'server' directory
-  pip install -r requirements.txt  # Install Python dependencies
-  python app.py  # Run the backend server (e.g., Flask or FastAPI)
+     ```bash
+     cd server  # Assuming the backend is in a 'server' directory
+     pip install -r requirements.txt  # Install Python dependencies
+     python app.py  # Run the backend server (e.g., Flask or FastAPI)
 
 4. **Access the Application**:
 Open your browser and navigate to http://localhost:5173 (default Vite port) to view the frontend.
@@ -99,12 +99,12 @@ Contributions are welcome! To contribute:
    git checkout -b feature-name
 3. Make your changes and commit:
 
-  ```bash
-  git commit -m "Add feature"
+     ```bash
+     git commit -m "Add feature"
 4. Push to the branch:
-
- ```bash
- git push origin feature-name
+   
+    ```bash
+    git push origin feature-name
 5. Submit a pull request.
 
 Please ensure your code follows the project's coding standards and includes appropriate tests.
